@@ -1,11 +1,11 @@
 mod cli;
 
 use clap::Parser;
-use cli::{AuthAction, Cli, Commands, DiscordAction};
+use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
 use degen_core::config::{load_credentials, lookup_credential};
 use degen_core::errors::DegenError;
-use degen_core::{auth, config, package, project, run, server, skill};
-use degen_portal::{DEFAULT_PORT, init, policy};
+use degen_core::{auth, package, project, run, server, skill};
+use degen_portal::{DEFAULT_PORT, connect, init, oauth, policy};
 
 /// View Channel, Send Messages, Read Message History, Add Reactions,
 /// Embed Links, Attach Files, Create Public Threads.
@@ -19,10 +19,18 @@ fn run() -> Result<(), DegenError> {
 
     match command {
         Commands::Serve { port } => serve(port)?,
-        Commands::Connect => server::connect()?,
+        Commands::Connect { provider, headless } => match provider {
+            Some(provider) => connect::run(&provider, headless)?,
+            None => server::connect()?,
+        },
+        Commands::Accounts { action } => match action {
+            None => connect::list()?,
+            Some(AccountAction::Default { id }) => connect::set_default(&id)?,
+            Some(AccountAction::Revoke { id }) => connect::revoke(&id)?,
+        },
         Commands::List => list()?,
-        Commands::Run { out, json, secrets, save_secrets, creds, global, tool, args } => {
-            let opts = run::RunOptions { out, json, secrets, save_secrets, creds, global };
+        Commands::Run { out, json, secrets, save_secrets, creds, global, account, tool, args } => {
+            let opts = run::RunOptions { out, json, secrets, save_secrets, creds, global, account };
             run::run(&tool, &args, opts)?
         }
         Commands::Skill { name } => skill::show(name.as_deref())?,
@@ -90,7 +98,6 @@ fn discord(action: DiscordAction) -> Result<(), DegenError> {
 
 fn list() -> Result<(), DegenError> {
     let packages = package::available()?;
-    let creds = load_credentials()?;
 
     println!("  {:<12} {:<9} {:<10} {:<6} CREDENTIALS", "PACKAGE", "VERSION", "SOURCE", "TOOLS");
     println!("  {}", "-".repeat(78));
@@ -101,7 +108,7 @@ fn list() -> Result<(), DegenError> {
             .requires_env
             .iter()
             .map(|v| {
-                let mark = if config::lookup_credential(&creds, v).is_some() { "✓" } else { "✗" };
+                let mark = if degen_core::app().credentials.missing(v).is_none() { "✓" } else { "✗" };
                 format!("{v} {mark}")
             })
             .collect();
@@ -110,10 +117,24 @@ fn list() -> Result<(), DegenError> {
         println!("  {:<12} {:<9} {:<10} {:<6} {}", pkg.id(), pkg.integration.version, source, tools, keys);
     }
 
-    let channels = policy::load()?.channels;
+    let accounts = oauth::load()?;
     println!();
     println!(
-        "  Writable channels: {}",
+        "  Connected accounts: {}",
+        if accounts.accounts.is_empty() {
+            "none — `degen-portal connect x`".to_string()
+        } else {
+            accounts
+                .accounts
+                .values()
+                .map(|a| format!("{} ({})", a.id(), a.expiry_note()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    );
+    let channels = policy::load()?.channels;
+    println!(
+        "  Writable channels:  {}",
         if channels.is_empty() {
             "none — `degen-portal discord allow <channel id>`".to_string()
         } else {
@@ -125,6 +146,8 @@ fn list() -> Result<(), DegenError> {
     println!("  degen-portal skill discord                Guide + every tool's parameters");
     println!("  degen-portal discord invite               URL that adds your bot to a server");
     println!("  degen-portal auth set DISCORD_BOT_TOKEN   Store the bot token (read from stdin)");
+    println!("  degen-portal connect x                    Connect an X account (one browser trip)");
+    println!("  degen-portal accounts                     Connected accounts and token expiry");
     println!("  degen-portal run <tool> --param value     Call a tool");
     Ok(())
 }

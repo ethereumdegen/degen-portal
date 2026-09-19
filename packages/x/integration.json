@@ -1,0 +1,15 @@
+{
+  "id": "x",
+  "name": "X",
+  "description": "Post, reply, quote, poll, search, read mentions, like and repost on X through the v2 API (api.x.com/2). Authentication is OAuth 2.0 with PKCE against an account connected once with `degen-portal connect x`; the access token lasts two hours and is refreshed automatically, and neither it nor the refresh token is ever printed. Writes are billed per call under X's pay-per-use pricing.",
+  "version": "0.1.0",
+  "requires_env": [
+    "X_ACCESS_TOKEN"
+  ],
+  "tags": [
+    "x",
+    "twitter",
+    "social",
+    "posting"
+  ]
+}

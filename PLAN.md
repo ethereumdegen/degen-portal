@@ -255,12 +255,19 @@ credentials, `discord invite` printing the callback-less URL, and the channel al
 `discord allow`, the same call reaches `discord.com/api/v10` and returns the API's own 401 for a
 bogus token; reads are never gated; 8 tests.
 
-**P2 — OAuth core + X posting.** `oauth.rs`: PKCE, loopback listener, state validation, token
-exchange, rotating-refresh store, single-flight refresh; `$OAUTH_TOKEN` resolution; x package
-minus media. `--headless` (print URL, paste the redirect back) as the fallback for when the
-listener can't bind or the portal rejects the URI — ~20 lines, not a phase. *Done when:*
-`degen-portal connect x` opens a browser, and 2h+ later a post still works without re-auth
-(verified by forcing `expires_at` into the past).
+**P2 — OAuth core + X posting. DONE.** `oauth.rs`: PKCE (S256, RFC 7636), a loopback listener on
+both `127.0.0.1` and `::1` at port 7720, state validation, the token exchange, rotating-refresh
+persistence, and a lock file around refresh so two processes cannot race X's rotation and strand
+the account. `credentials.rs` resolves `$X_ACCESS_TOKEN` from the connected account, refreshing
+when it is inside a 60s margin. 11 X tools; `connect x` (browser or `--headless` paste),
+`accounts`, `accounts default`, `accounts revoke` (revokes at X, then forgets locally), and
+`run --account x:handle`. *Verified:* 25 tests, including the RFC test vector, a real browser
+callback caught and answered over TCP, an expired token refreshed against a local token endpoint
+with the rotated refresh token persisted, a live token used without a refresh, and a connected
+account arriving at a server as `Authorization: Bearer <token>` — end to end, with no X
+credentials needed.
+
+Not done in P2, by design: media (P4), and any limit on how much an agent may post (P3).
 
 **P3 — Safety layer.** Dedupe, budgets, no-retry semantics, audit log, `undo`, approval queue in
 the TUI. *Done when:* the same `x_post` twice produces one tweet, and a budget-exhausted account

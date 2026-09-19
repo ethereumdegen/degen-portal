@@ -5,10 +5,12 @@
 //! [`policy::PortalPolicy`] before it leaves, and the state lives in
 //! `~/.degen-portal` rather than beside the devops keys.
 
+pub mod connect;
+pub mod credentials;
+pub mod oauth;
 pub mod policy;
 
 use degen_core::App;
-use degen_core::config::StoredCredentials;
 use include_dir::{Dir, include_dir};
 
 /// The packages shipped inside the binary.
@@ -26,9 +28,9 @@ pub fn init() {
         env_prefix: "DEGEN_PORTAL",
         user_agent: concat!("degen-portal/", env!("CARGO_PKG_VERSION")),
         bundled: &BUNDLED,
-        // Discord authenticates with a bot token, which is a stored key like
-        // any other. X's OAuth resolver replaces this in P2.
-        credentials: &StoredCredentials,
+        // Discord's bot token is a stored key like any other; X's access token
+        // is minted and refreshed per call.
+        credentials: &credentials::PortalCredentials,
         policy: &policy::PortalPolicy,
         example_tool: "discord_send_message",
         overview: include_str!("skill.md"),

@@ -1,0 +1,29 @@
+{
+  "name": "x_unlike",
+  "description": "Remove a like. Returns { data: { liked: false } }.",
+  "method": "DELETE",
+  "url": "https://api.x.com/2/users/{id}/likes/{tweet_id}",
+  "headers": {
+    "Authorization": "Bearer $X_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The acting user's id, from x_me."
+      },
+      "tweet_id": {
+        "type": "string",
+        "description": "Post id, the `data.id` a post returned, e.g. '1790000000000000000'."
+      }
+    },
+    "required": [
+      "id",
+      "tweet_id"
+    ]
+  },
+  "body_mapping": "none"
+}

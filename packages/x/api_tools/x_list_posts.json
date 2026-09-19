@@ -1,0 +1,32 @@
+{
+  "name": "x_list_posts",
+  "description": "A user's own recent posts, newest first. Useful to check what was already said before saying it again. Returns { data: [...], meta }.",
+  "method": "GET",
+  "url": "https://api.x.com/2/users/{id}/tweets?max_results={max_results}&exclude={exclude}&tweet.fields=created_at,public_metrics",
+  "headers": {
+    "Authorization": "Bearer $X_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "User id (not the handle), from x_me."
+      },
+      "max_results": {
+        "type": "integer",
+        "description": "How many, 5-100. Default 10."
+      },
+      "exclude": {
+        "type": "string",
+        "description": "Comma-separated: 'retweets', 'replies', or both."
+      }
+    },
+    "required": [
+      "id"
+    ]
+  },
+  "body_mapping": "none"
+}

@@ -1,0 +1,24 @@
+{
+  "name": "x_get_post",
+  "description": "Read one post: text, author, metrics, and what it replies to. Returns { data, includes }.",
+  "method": "GET",
+  "url": "https://api.x.com/2/tweets/{id}?tweet.fields=created_at,public_metrics,conversation_id,in_reply_to_user_id&expansions=author_id&user.fields=username",
+  "headers": {
+    "Authorization": "Bearer $X_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Post id, the `data.id` a post returned, e.g. '1790000000000000000'."
+      }
+    },
+    "required": [
+      "id"
+    ]
+  },
+  "body_mapping": "none"
+}

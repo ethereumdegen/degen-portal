@@ -1,0 +1,32 @@
+{
+  "name": "x_list_mentions",
+  "description": "Posts mentioning a user, newest first \u2014 how an agent finds what to reply to. Returns { data: [...], meta }. Get the user id from x_me.",
+  "method": "GET",
+  "url": "https://api.x.com/2/users/{id}/mentions?max_results={max_results}&since_id={since_id}&tweet.fields=created_at,conversation_id&expansions=author_id&user.fields=username",
+  "headers": {
+    "Authorization": "Bearer $X_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "User id (not the handle), from x_me."
+      },
+      "max_results": {
+        "type": "integer",
+        "description": "How many, 5-100. Default 10."
+      },
+      "since_id": {
+        "type": "string",
+        "description": "Only mentions newer than this post id, for polling."
+      }
+    },
+    "required": [
+      "id"
+    ]
+  },
+  "body_mapping": "none"
+}

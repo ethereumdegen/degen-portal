@@ -27,8 +27,22 @@ pub enum Commands {
         port: u16,
     },
 
-    /// Print the URL and token of the server running for this directory (for agents: eval "$(degen-portal connect)")
-    Connect,
+    /// With no argument: print the URL and token of the running server (for agents:
+    /// eval "$(degen-portal connect)"). With a provider: connect an account over OAuth.
+    Connect {
+        /// Provider to connect an account for, e.g. `x`
+        provider: Option<String>,
+
+        /// Print the authorization URL and read the code back, instead of opening a browser
+        #[arg(long)]
+        headless: bool,
+    },
+
+    /// Connected accounts, and which one acts by default
+    Accounts {
+        #[command(subcommand)]
+        action: Option<AccountAction>,
+    },
 
     /// List packages, their tools, and which credentials are set
     List,
@@ -59,6 +73,10 @@ pub enum Commands {
         #[arg(long)]
         global: bool,
 
+        /// Act as this connected account, e.g. x:handle
+        #[arg(long)]
+        account: Option<String>,
+
         /// Tool name, or package/tool
         tool: String,
 
@@ -84,6 +102,15 @@ pub enum Commands {
         #[command(subcommand)]
         action: AuthAction,
     },
+}
+
+#[derive(Subcommand)]
+pub enum AccountAction {
+    /// Make this account the one used when no --account is given
+    Default { id: String },
+
+    /// Revoke the token at the provider and forget the account here
+    Revoke { id: String },
 }
 
 #[derive(Subcommand)]

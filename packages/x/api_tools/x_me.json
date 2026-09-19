@@ -1,0 +1,17 @@
+{
+  "name": "x_me",
+  "description": "Which account the calls act as: { data: { id, username, name } }. Costs one read. Call it when you are unsure whose timeline you are about to post to.",
+  "method": "GET",
+  "url": "https://api.x.com/2/users/me?user.fields=username,name,verified",
+  "headers": {
+    "Authorization": "Bearer $X_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "body_mapping": "none"
+}

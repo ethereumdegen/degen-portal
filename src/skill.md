@@ -1,7 +1,7 @@
 ---
 skill: degen-portal
 version: {version}
-description: Post and read in Discord (and, from P2, X) with stored credentials; a human-held allowlist decides which channels can be written to
+description: Post and read on X and in Discord; X authenticates per account over OAuth with tokens refreshed automatically, and a human-held allowlist decides which Discord channels can be written to
 ---
 
 # degen-portal
@@ -26,7 +26,8 @@ there until it is deleted. Act accordingly:
 ## Commands
 
 ```bash
-degen-portal list                             # packages, tool counts, which credentials are set
+degen-portal list                             # packages, credentials, connected accounts
+degen-portal accounts                         # X accounts and when each token expires
 degen-portal skill <package>                  # a package's guide and every tool's parameters
 degen-portal skill <tool>                     # one tool's parameters
 degen-portal run <tool> --param value ...     # call a tool
@@ -34,9 +35,16 @@ degen-portal run --json '{...}' <tool>        # arguments as JSON (or --json @fi
 degen-portal discord channels                 # which channels may be written to
 ```
 
-## The allowlist
+## Accounts and the allowlist
 
-Writing to a Discord channel is refused unless a human has allowed that exact
+Two different gates, one per provider.
+
+**X** acts as a connected account. With one connected it is used; with several
+and no default, a call is refused rather than guessed — ask which handle. The
+access token is refreshed automatically and never shown to you. Add
+`--account x:handle` to pick one.
+
+**Discord**: writing to a channel is refused unless a human has allowed that exact
 channel id on this machine. Reads are never refused, so you can list channels
 and read messages to work out which id to ask about.
 
