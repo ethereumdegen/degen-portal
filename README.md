@@ -8,6 +8,8 @@ The difference is that these calls are public, permanent and billed, so there is
 a layer between an agent and the send button.
 
 ```bash
+# degen-core is a path dependency, so degen-tools has to sit beside this repo
+git clone git@github.com:ethereumdegen/degen-tools.git ../degen-tools
 cargo install --path .
 
 degen-portal                     # local API for agents on 127.0.0.1:7719
