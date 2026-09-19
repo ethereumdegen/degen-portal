@@ -281,6 +281,7 @@ dependencies = [
 [[package]]
 name = "degen-core"
 version = "0.1.0"
+source = "git+https://github.com/ethereumdegen/degen-core#954c9cfc1763cd688ac65365c1d8180415129a78"
 dependencies = [
  "axum",
  "dirs",

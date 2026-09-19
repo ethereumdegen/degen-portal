@@ -8,8 +8,6 @@ The difference is that these calls are public, permanent and billed, so there is
 a layer between an agent and the send button.
 
 ```bash
-# degen-core is a path dependency, so degen-tools has to sit beside this repo
-git clone git@github.com:ethereumdegen/degen-tools.git ../degen-tools
 cargo install --path .
 
 degen-portal                     # local API for agents on 127.0.0.1:7719
@@ -174,9 +172,14 @@ the obvious next step.
 
 ## Built on
 
-`degen-core`, the engine extracted from degen-tools: package format, credential
-resolution, secret masking, the host allowlist and the loopback API. Both
-binaries share it so the security-critical parts exist once.
+[degen-core](https://github.com/ethereumdegen/degen-core): the package format,
+credential resolution, secret masking, the host allowlist and the loopback API.
+It is pulled in as an ordinary dependency, so this repo clones and builds on its
+own. [degen-tools](https://github.com/ethereumdegen/degen-tools) — the same
+engine pointed at devops APIs — is a sibling, not a dependency.
+
+Everything specific to posting lives here: the OAuth accounts, the channel
+allowlist, the repeat window, the budgets, the ledger and the MCP server.
 
 ## License
 
