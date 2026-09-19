@@ -7,8 +7,8 @@
 
 use std::time::Duration;
 
-use degen_core::config::{load_credentials, lookup_credential};
-use degen_core::errors::DegenError;
+use degen_tools_core::config::{load_credentials, lookup_credential};
+use degen_tools_core::errors::DegenError;
 
 use crate::oauth::{self, Account};
 
@@ -137,7 +137,7 @@ fn open_browser(url: &str) {
 fn whoami(access_token: &str) -> Result<(String, String), DegenError> {
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(30))
-        .user_agent(degen_core::app().user_agent)
+        .user_agent(degen_tools_core::app().user_agent)
         .build()
         .map_err(|e| DegenError::Http(format!("failed to create HTTP client: {e}")))?;
     let response = client

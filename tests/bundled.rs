@@ -1,7 +1,7 @@
 //! A malformed tool file is invisible until an agent calls it and gets a parse
 //! error instead of a post. These run over every package compiled in.
 
-use degen_core::{install, package};
+use degen_tools_core::{install, package};
 
 fn engine() {
     degen_portal::init();

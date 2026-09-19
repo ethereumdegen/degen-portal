@@ -279,9 +279,24 @@ dependencies = [
 ]
 
 [[package]]
-name = "degen-core"
+name = "degen-portal"
 version = "0.1.0"
-source = "git+https://github.com/ethereumdegen/degen-core#954c9cfc1763cd688ac65365c1d8180415129a78"
+dependencies = [
+ "clap",
+ "degen-tools-core",
+ "include_dir",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+]
+
+[[package]]
+name = "degen-tools-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2b8fb77d229d93861c5fd45571871eb0643c4230d313139c0794f6277f880ea"
 dependencies = [
  "axum",
  "dirs",
@@ -293,20 +308,6 @@ dependencies = [
  "serde_json",
  "tokio",
  "zip",
-]
-
-[[package]]
-name = "degen-portal"
-version = "0.1.0"
-dependencies = [
- "clap",
- "degen-core",
- "include_dir",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "tokio",
 ]
 
 [[package]]

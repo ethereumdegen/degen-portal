@@ -9,7 +9,7 @@ use std::net::TcpListener;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use degen_core::run::RunOptions;
+use degen_tools_core::run::RunOptions;
 use degen_portal::{ledger, policy, queue};
 use serde_json::{Map, Value};
 
@@ -63,7 +63,7 @@ fn mock_api() -> (u16, Arc<AtomicUsize>) {
 /// A package whose one tool publishes: `post_id_path` is what makes the ledger
 /// count it, deduplicate it and know how to undo it.
 fn write_package(port: u16) {
-    let dir = degen_core::config::packages_dir().unwrap().join("x");
+    let dir = degen_tools_core::config::packages_dir().unwrap().join("x");
     std::fs::create_dir_all(dir.join("api_tools")).unwrap();
     std::fs::write(
         dir.join("integration.json"),
@@ -81,11 +81,11 @@ fn write_package(port: u16) {
     .unwrap();
 }
 
-fn post(text: &str) -> Result<degen_core::run::Outcome, degen_core::errors::DegenError> {
-    let (pkg, tool) = degen_core::package::find_tool("x_post").unwrap();
+fn post(text: &str) -> Result<degen_tools_core::run::Outcome, degen_tools_core::errors::DegenError> {
+    let (pkg, tool) = degen_tools_core::package::find_tool("x_post").unwrap();
     let mut args = Map::new();
     args.insert("text".into(), Value::String(text.into()));
-    degen_core::run::execute(&pkg, &tool, args, &RunOptions::default())
+    degen_tools_core::run::execute(&pkg, &tool, args, &RunOptions::default())
 }
 
 #[test]

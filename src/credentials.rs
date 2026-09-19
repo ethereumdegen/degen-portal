@@ -6,8 +6,8 @@
 //! `Result` — a failed refresh has to be reported as a failed refresh, not as a
 //! credential that looks unset.
 
-use degen_core::config::{CallContext, CredentialResolver, load_credentials, lookup_credential, stored_or_fix};
-use degen_core::errors::DegenError;
+use degen_tools_core::config::{CallContext, CredentialResolver, load_credentials, lookup_credential, stored_or_fix};
+use degen_tools_core::errors::DegenError;
 
 use crate::oauth;
 

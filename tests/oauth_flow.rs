@@ -231,7 +231,7 @@ fn a_connected_account_becomes_the_authorization_header() {
         oauth::save(&accounts).unwrap();
 
         let (port, server) = mock_api();
-        let dir = degen_core::config::packages_dir().unwrap().join("mock");
+        let dir = degen_tools_core::config::packages_dir().unwrap().join("mock");
         std::fs::create_dir_all(dir.join("api_tools")).unwrap();
         std::fs::write(
             dir.join("integration.json"),
@@ -249,11 +249,11 @@ fn a_connected_account_becomes_the_authorization_header() {
         )
         .unwrap();
 
-        let (pkg, tool) = degen_core::package::find_tool("mock_post").unwrap();
+        let (pkg, tool) = degen_tools_core::package::find_tool("mock_post").unwrap();
         let mut args = serde_json::Map::new();
         args.insert("text".into(), serde_json::Value::String("gm".into()));
-        let opts = degen_core::run::RunOptions { account: Some("x:inject".into()), ..Default::default() };
-        let outcome = degen_core::run::execute(&pkg, &tool, args, &opts).unwrap();
+        let opts = degen_tools_core::run::RunOptions { account: Some("x:inject".into()), ..Default::default() };
+        let outcome = degen_tools_core::run::execute(&pkg, &tool, args, &opts).unwrap();
         assert!(outcome.ok, "{:?}", outcome.error);
 
         let head = server.join().unwrap();

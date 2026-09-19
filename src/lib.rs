@@ -1,4 +1,4 @@
-//! degen-portal: the social half of the engine in `degen-core`.
+//! degen-portal: the social half of the engine in `degen-tools-core`.
 //!
 //! Same package format, same loopback API, same masking as degen-tools. What
 //! differs is that a call here is public and permanent, so it goes through
@@ -13,7 +13,7 @@ pub mod oauth;
 pub mod policy;
 pub mod queue;
 
-use degen_core::App;
+use degen_tools_core::App;
 use include_dir::{Dir, include_dir};
 
 /// The packages shipped inside the binary.
@@ -24,7 +24,7 @@ pub const DEFAULT_PORT: u16 = 7719;
 
 /// Name this binary to the engine. Runs before anything that reads state.
 pub fn init() {
-    degen_core::init(App {
+    degen_tools_core::init(App {
         name: "degen-portal",
         version: env!("CARGO_PKG_VERSION"),
         dir: ".degen-portal",

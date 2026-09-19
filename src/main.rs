@@ -2,9 +2,9 @@ mod cli;
 
 use clap::Parser;
 use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
-use degen_core::config::{load_credentials, lookup_credential};
-use degen_core::errors::DegenError;
-use degen_core::{auth, package, project, run, server, skill};
+use degen_tools_core::config::{load_credentials, lookup_credential};
+use degen_tools_core::errors::DegenError;
+use degen_tools_core::{auth, package, project, run, server, skill};
 use degen_portal::{DEFAULT_PORT, connect, init, ledger, mcp, oauth, policy, queue};
 
 /// View Channel, Send Messages, Read Message History, Add Reactions,
@@ -205,7 +205,7 @@ fn list() -> Result<(), DegenError> {
             .requires_env
             .iter()
             .map(|v| {
-                let mark = if degen_core::app().credentials.missing(v).is_none() { "✓" } else { "✗" };
+                let mark = if degen_tools_core::app().credentials.missing(v).is_none() { "✓" } else { "✗" };
                 format!("{v} {mark}")
             })
             .collect();

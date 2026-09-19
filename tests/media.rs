@@ -8,7 +8,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
 use std::sync::mpsc;
 
-use degen_core::run::RunOptions;
+use degen_tools_core::run::RunOptions;
 use serde_json::{Map, Value};
 
 static STATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -73,7 +73,7 @@ fn mock_api() -> (u16, mpsc::Receiver<Seen>) {
 
 /// A two-tool package: one shaped like X's upload, one like Discord's.
 fn write_package(port: u16) {
-    let dir = degen_core::config::packages_dir().unwrap().join("up");
+    let dir = degen_tools_core::config::packages_dir().unwrap().join("up");
     std::fs::create_dir_all(dir.join("api_tools")).unwrap();
     std::fs::write(dir.join("integration.json"), r#"{"id":"up","name":"Up","version":"0.1.0","requires_env":[]}"#).unwrap();
     std::fs::write(
@@ -99,10 +99,10 @@ fn write_package(port: u16) {
     .unwrap();
 }
 
-fn call(tool: &str, args: Value) -> Result<degen_core::run::Outcome, degen_core::errors::DegenError> {
-    let (pkg, config) = degen_core::package::find_tool(tool).unwrap();
+fn call(tool: &str, args: Value) -> Result<degen_tools_core::run::Outcome, degen_tools_core::errors::DegenError> {
+    let (pkg, config) = degen_tools_core::package::find_tool(tool).unwrap();
     let args: Map<String, Value> = args.as_object().unwrap().clone();
-    degen_core::run::execute(&pkg, &config, args, &RunOptions::default())
+    degen_tools_core::run::execute(&pkg, &config, args, &RunOptions::default())
 }
 
 /// A tiny but real PNG, so the bytes on the wire are a file's bytes.

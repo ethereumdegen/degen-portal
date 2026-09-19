@@ -19,11 +19,11 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
 
-use degen_core::config::{CallContext, data_dir};
-use degen_core::errors::DegenError;
-use degen_core::run::Outcome;
-use degen_core::tool::ToolConfig;
-use degen_core::{CallPolicy, Verdict};
+use degen_tools_core::config::{CallContext, data_dir};
+use degen_tools_core::errors::DegenError;
+use degen_tools_core::run::Outcome;
+use degen_tools_core::tool::ToolConfig;
+use degen_tools_core::{CallPolicy, Verdict};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 

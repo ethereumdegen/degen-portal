@@ -172,7 +172,7 @@ the obvious next step.
 
 ## Built on
 
-[degen-core](https://github.com/ethereumdegen/degen-core): the package format,
+[degen-tools-core](https://github.com/ethereumdegen/degen-tools-core): the package format,
 credential resolution, secret masking, the host allowlist and the loopback API.
 It is pulled in as an ordinary dependency, so this repo clones and builds on its
 own. [degen-tools](https://github.com/ethereumdegen/degen-tools) — the same

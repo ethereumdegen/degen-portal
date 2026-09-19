@@ -10,8 +10,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use degen_core::config::data_dir;
-use degen_core::errors::DegenError;
+use degen_tools_core::config::data_dir;
+use degen_tools_core::errors::DegenError;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
@@ -110,11 +110,11 @@ pub fn list() -> Result<(), DegenError> {
 /// Run a held call for real.
 pub fn approve(id: &str) -> Result<(), DegenError> {
     let held = take(id)?;
-    let (pkg, tool) = degen_core::package::find_tool(&held.tool)?;
-    let opts = degen_core::run::RunOptions { account: held.account.clone(), ..Default::default() };
+    let (pkg, tool) = degen_tools_core::package::find_tool(&held.tool)?;
+    let opts = degen_tools_core::run::RunOptions { account: held.account.clone(), ..Default::default() };
 
     APPROVING.store(true, Ordering::SeqCst);
-    let outcome = degen_core::run::execute(&pkg, &tool, held.args.clone(), &opts);
+    let outcome = degen_tools_core::run::execute(&pkg, &tool, held.args.clone(), &opts);
     APPROVING.store(false, Ordering::SeqCst);
 
     let outcome = outcome.inspect_err(|_| {

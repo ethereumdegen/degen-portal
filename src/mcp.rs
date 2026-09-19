@@ -13,9 +13,9 @@
 
 use std::io::{BufRead, Write};
 
-use degen_core::errors::DegenError;
-use degen_core::run::RunOptions;
-use degen_core::{package, run};
+use degen_tools_core::errors::DegenError;
+use degen_tools_core::run::RunOptions;
+use degen_tools_core::{package, run};
 use serde_json::{Map, Value, json};
 
 /// Revisions whose base protocol and `tools/*` shapes this server matches. The
@@ -79,7 +79,7 @@ fn error_response(id: Value, code: i32, message: &str) -> String {
 fn initialize(params: &Value) -> Value {
     let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or_default();
     let version = if KNOWN_VERSIONS.contains(&asked) { asked } else { DEFAULT_VERSION };
-    let app = degen_core::app();
+    let app = degen_tools_core::app();
     json!({
         "protocolVersion": version,
         "capabilities": { "tools": {} },
@@ -87,7 +87,7 @@ fn initialize(params: &Value) -> Value {
         // The rules an agent has to know before it posts — the same guide
         // `degen-portal skill` prints, minus the package listing, which
         // tools/list already carries.
-        "instructions": degen_core::skill::strip_frontmatter(app.overview).replace("{packages}", "").replace("{version}", app.version),
+        "instructions": degen_tools_core::skill::strip_frontmatter(app.overview).replace("{packages}", "").replace("{version}", app.version),
     })
 }
 
@@ -154,7 +154,7 @@ fn invoke(name: &str, mut args: Map<String, Value>) -> Result<(String, bool), De
     // `account` is ours, not the tool's: take it out before the schema check.
     let account = args.remove(ACCOUNT_ARG).and_then(|v| v.as_str().map(str::to_string));
     let (pkg, tool) = package::find_tool(name)?;
-    degen_core::args::check_known(&tool, &args)?;
+    degen_tools_core::args::check_known(&tool, &args)?;
 
     let opts = RunOptions { account, ..Default::default() };
     let outcome = run::execute(&pkg, &tool, args, &opts)?;

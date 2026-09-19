@@ -17,11 +17,10 @@ name = "degen-portal"
 path = "src/main.rs"
 
 [dependencies]
-# The shared engine, its own repo. Hacking on both at once? Point cargo at a
-# local checkout:
-#   [patch."https://github.com/ethereumdegen/degen-core"]
-#   degen-core = { path = "../degen-core" }
-degen-core = { git = "https://github.com/ethereumdegen/degen-core" }
+# The shared engine. Hacking on both at once? Point cargo at a local checkout:
+#   [patch.crates-io]
+#   degen-tools-core = { path = "../degen-tools-core" }
+degen-tools-core = "0.1"
 clap = { version = "4", features = ["derive"] }
 include_dir = "0.7"
 serde = { version = "1", features = ["derive"] }

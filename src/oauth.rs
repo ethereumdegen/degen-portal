@@ -19,9 +19,9 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use degen_core::config::data_dir;
-use degen_core::errors::DegenError;
-use degen_core::server::new_token;
+use degen_tools_core::config::data_dir;
+use degen_tools_core::errors::DegenError;
+use degen_tools_core::server::new_token;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -377,7 +377,7 @@ pub fn revoke_remote(account: &Account, client_secret: Option<&str>) -> Result<(
 fn post_form(token_url: &str, client_id: &str, client_secret: Option<&str>, form: &[(&str, &str)]) -> Result<TokenResponse, DegenError> {
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(30))
-        .user_agent(degen_core::app().user_agent)
+        .user_agent(degen_tools_core::app().user_agent)
         .build()
         .map_err(|e| DegenError::Http(format!("failed to create HTTP client: {e}")))?;
     let mut request = client.post(token_url).form(form);
