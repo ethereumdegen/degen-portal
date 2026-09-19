@@ -127,20 +127,13 @@ prints each message as one JSON line, so an agent can read a conversation as it
 happens instead of polling. It only reads; posting stays a separate call
 through the allowlist.
 
-**MCP:** `degen-portal mcp` speaks the Model Context Protocol on stdin/stdout.
+**Status:** `degen-portal status` prints what it can do right now — accounts
+and token expiry, writable channels, budget left, whether calls are being
+held — so an agent can check before a burst rather than find out by refusal.
 
-```json
-{
-  "mcpServers": {
-    "degen-portal": { "command": "degen-portal", "args": ["mcp"] }
-  }
-}
-```
-
-It exposes every tool plus `portal_status` — connected accounts, writable
-channels, budget left — so an agent can ask what it may do before doing it. A
-refusal comes back as tool content the model reads, not a transport error it
-never sees.
+There is no MCP server and no plugin protocol. A tool an agent can reach is a
+command it can run, and the loopback API is there for the ones that would
+rather speak JSON.
 
 ## Packages
 
@@ -166,7 +159,7 @@ the metalcraft integration format, so a package runs here and in the agent.
 | `log` / `undo` | What was published, and take it back |
 | `queue` / `approve` / `drop` | Calls held for a human |
 | `budget <provider>` / `approval <provider> auto\|queue` | Change the limits |
-| `mcp` | Serve the tools over MCP on stdin/stdout |
+| `status` | Accounts, channels, budget left, anything held |
 | `listen [--channel ID]` | Print Discord messages as they arrive, one JSON line each |
 | `accounts secure [--off]` | Move the OAuth tokens into the OS keychain, or back |
 | `auth set\|get\|list\|remove` | Stored credentials |
@@ -212,7 +205,7 @@ own. [degen-tools](https://github.com/ethereumdegen/degen-tools) — the same
 engine pointed at devops APIs — is a sibling, not a dependency.
 
 Everything specific to posting lives here: the OAuth accounts, the channel
-allowlist, the repeat window, the budgets, the ledger and the MCP server.
+allowlist, the repeat window, the budgets, the ledger and the dashboard.
 
 ## License
 

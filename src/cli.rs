@@ -101,8 +101,8 @@ pub enum Commands {
         action: DiscordAction,
     },
 
-    /// Serve the tools over the Model Context Protocol on stdin/stdout
-    Mcp,
+    /// What this machine can post right now: accounts, channels, budget left
+    Status,
 
     /// Print Discord messages as they arrive, one JSON line each, until stopped
     Listen {

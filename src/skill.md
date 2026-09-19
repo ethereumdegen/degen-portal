@@ -29,6 +29,7 @@ there until it is deleted. Act accordingly:
 degen-portal list                             # packages, credentials, connected accounts
 degen-portal accounts                         # X accounts and when each token expires
 degen-portal log                              # what was published, and how much budget is left
+degen-portal status                           # accounts, channels, budget left — check before a burst
 degen-portal skill <package>                  # a package's guide and every tool's parameters
 degen-portal skill <tool>                     # one tool's parameters
 degen-portal run <tool> --param value ...     # call a tool

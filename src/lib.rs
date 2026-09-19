@@ -9,11 +9,11 @@ pub mod connect;
 pub mod credentials;
 pub mod gateway;
 pub mod ledger;
-pub mod mcp;
 pub mod oauth;
 pub mod policy;
 pub mod queue;
 pub mod secrets;
+pub mod status;
 pub mod tui;
 pub mod upload;
 

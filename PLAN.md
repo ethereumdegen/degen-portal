@@ -314,22 +314,17 @@ the remainder last, finalize once, two status polls, and the account's bearer to
 call; an upload needing no transcode never polls; a `.png` is refused before the session is even
 opened, pointing at `x_upload_media`.
 
-**P5 — MCP. DONE.** `degen-portal mcp` speaks JSON-RPC 2.0 on
-stdin/stdout: `initialize` (echoing back any protocol revision from 2024-11-05 to 2026-07-28,
-else the newest), `ping`, `tools/list`, `tools/call`. Every package tool is exposed with its own
-schema, plus `portal_status`, which answers "what may I do right now" — accounts and expiry,
-writable channels, budget left, whether calls are being held. X tools gain an optional `account`
-argument. The overview from `skill` is sent as `instructions`, frontmatter stripped, so the
-"never repeat a failed write" rule reaches the model before its first call.
+**P5 — MCP. BUILT, THEN REMOVED.** It worked — JSON-RPC on stdin/stdout, every tool with its
+schema, the gates intact — and it was deleted anyway, because nothing needed it. An agent that
+can run `degen-portal run x_post --text …` needs no protocol, and one that would rather speak
+JSON has the loopback API. MCP was a third way to say the same thing, 437 lines of it, whose
+only real user would have been a client that cannot run a shell command. It is in the history
+at 59f5ccb if that client ever shows up.
 
-Crucially this is a second face, not a second path: a `tools/call` goes through `run::execute`,
-so the allowlist, the repeat window, the budgets and the queue all still apply. *Verified:* 48
-tests. Two drive the real spawned binary over pipes — handshake, `tools/list`, a post, and the
-identical second post coming back with `isError` while the mock API records exactly one request.
-
-Two bugs the tests found: `instructions` was shipping the YAML frontmatter, and a bad argument
-or unknown tool escaped as a JSON-RPC error, which most clients hide from the model. Both now
-come back as tool content the model can read and act on.
+What survived is the one thing it added that the CLI lacked: `portal_status` became
+`degen-portal status`, which answers "what may I do right now" — accounts and expiry, writable
+channels, budget left, anything held — in one call, so an agent checks before a burst instead of
+finding out by refusal.
 
 **The Discord gateway listener. DONE.** `degen-portal listen` holds an outbound WebSocket open
 and prints each message as one JSON line: identify with GUILDS | GUILD_MESSAGES |
