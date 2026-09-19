@@ -12,6 +12,7 @@ pub mod mcp;
 pub mod oauth;
 pub mod policy;
 pub mod queue;
+pub mod upload;
 
 use degen_tools_core::App;
 use include_dir::{Dir, include_dir};
@@ -37,5 +38,7 @@ pub fn init() {
         policy: &policy::PortalPolicy,
         example_tool: "discord_send_message",
         overview: include_str!("skill.md"),
+        // X's chunked upload is four calls with a session held between them.
+        natives: &[upload::TOOL],
     });
 }

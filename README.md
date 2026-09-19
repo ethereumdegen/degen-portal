@@ -117,7 +117,7 @@ never sees.
 | Package | Credentials | Tools |
 |---|---|---|
 | `discord` | `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL`, `DISCORD_CLIENT_ID` | Send, edit, delete, react, threads, attachments, read messages, list servers and channels, webhook posting. |
-| `x` | connected account (OAuth) | Post, reply, quote, poll, delete, image upload, search, mentions, own timeline, like, repost. |
+| `x` | connected account (OAuth) | Post, reply, quote, poll, delete, image and video upload, search, mentions, own timeline, like, repost. |
 
 Same format as degen-tools: `integration.json` plus one JSON file per tool, in
 the metalcraft integration format, so a package runs here and in the agent.
@@ -162,8 +162,6 @@ the obvious next step.
 
 ## Not here
 
-- **X video.** It needs four calls (initialize, append per chunk, finalize, poll
-  status) and every tool here is one HTTP request. Images work.
 - **Anything hosted.** No relay, no broker, no always-on daemon. Close the
   laptop and nothing posts, which is the point.
 - **Reacting in real time.** Reading is polling (`discord_get_messages

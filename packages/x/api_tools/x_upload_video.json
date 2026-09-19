@@ -1,0 +1,29 @@
+{
+  "name": "x_upload_video",
+  "description": "Upload a video or animated GIF so a post can carry it. COSTS MONEY. Takes a path to a file on this machine and does the whole chunked upload \u2014 initialize, one call per 4 MB segment, finalize, then waiting while X transcodes \u2014 and returns { data: { id } } once the media is usable. Pass that id to x_post as --media_ids. One video or one GIF per post. mp4, mov, webm or gif; use x_upload_media for a still image. A large file takes minutes: call it once and wait rather than starting again.",
+  "method": "NATIVE",
+  "url": "native:x_upload_video",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "media": {
+        "type": "string",
+        "description": "Path to the video on this machine, e.g. './out/clip.mp4'."
+      },
+      "media_category": {
+        "type": "string",
+        "enum": [
+          "tweet_video",
+          "tweet_gif",
+          "amplify_video"
+        ],
+        "description": "'tweet_video' (default) for a normal post, 'tweet_gif' for an animated GIF, 'amplify_video' for an ads creative."
+      }
+    },
+    "required": [
+      "media"
+    ]
+  },
+  "body_mapping": "none",
+  "timeout_secs": 900
+}

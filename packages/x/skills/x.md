@@ -98,6 +98,8 @@ with `--since_id` rather than re-reading the same timeline.
 | `x_list_mentions` | What mentions the account, for replying. |
 | `x_list_posts` | What the account already said. |
 | `x_upload_media` | Upload an image and get the id to attach. |
+| `x_upload_video` | Upload a video or GIF: chunked, and waits for transcoding. |
+| `x_upload_status` | Where a still-processing upload got to. |
 | `x_like` / `x_unlike` | Like, visibly. |
 | `x_repost` / `x_unrepost` | Put someone else's words on the timeline. Publishing, in effect. |
 
@@ -115,10 +117,26 @@ budget — the post does.
 The file is read off this machine and published. Upload what the user asked you
 to publish and nothing else.
 
-**Video is not supported.** X requires a four-call chunked flow
-(initialize, append each 5 MB chunk, finalize, then poll until processing
-finishes), and a tool here is one HTTP request. Say so rather than trying to
-improvise it.
+## Video and GIFs
+
+```bash
+degen-portal run x_upload_video --media ./out/clip.mp4    # -> { "data": { "id": "1880..." } }
+degen-portal run x_post --text "ship" --media_ids '["1880..."]'
+```
+
+One video **or** one GIF per post, never alongside images. mp4, mov, webm or
+gif. `x_upload_video` does the whole chunked upload — initialize, a call per
+4 MB segment, finalize — and then waits while X transcodes, so it can take
+minutes on a long file. **Call it once and wait.** Starting again uploads the
+whole thing a second time and bills you twice.
+
+It returns only once the media is usable. If X is still transcoding after 15
+minutes it gives up and hands you the media id; check that with
+`x_upload_status --media_id <id>` and post when the state is `succeeded`.
+
+Length and size caps come from the *account*, not the API plan: 20 minutes
+without X Premium, 125 with. A file that uploads can still be refused by
+`x_post` with a 403 saying the account may not post a video that long.
 
 ## When something fails
 

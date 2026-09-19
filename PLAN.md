@@ -285,7 +285,7 @@ issuing the DELETE.
 Core grew two seams for it: `CallPolicy::check` now returns a `Verdict` (`Send` or `Hold`, so a
 policy can answer without calling out) and `CallPolicy::record` runs after every non-GET call.
 
-**P4 — Media. DONE for images; video deferred, see below.** Core gained the `multipart` body
+**P4 — Media. DONE.** Core gained the `multipart` body
 mapping: `file_params` names the arguments that are paths, `param_paths` renames a parameter to
 the form field an API wants (Discord's `files[0]`), and `payload_json_field` packs the remaining
 arguments into one JSON field (Discord's `payload_json`). Files are read with a 512 MB ceiling
@@ -298,13 +298,21 @@ boundary, and that the tool's own `Content-Type` header does not survive to brea
 to an unallowed channel is refused like any other write, and a missing file fails before
 anything is sent. Also demonstrated at the CLI: upload, then a post carrying `media.media_ids`.
 
-**X video is not implemented, and it is not a small gap.** It needs four calls —
-`initialize`, `append` per 5 MB chunk, `finalize`, then poll `STATUS` until processing ends.
-Every tool here is exactly one HTTP request, by design: that is what makes a package declarative
-JSON that the metalcraft agent can also run. Supporting video means a composite tool — a Rust
-implementation registered beside the JSON ones and dispatched by `run` and `/v1/run`. That is a
-real change to what a tool *is*, so it is a decision to take deliberately rather than smuggle in
-under "media". Images cover posting charts, screenshots and art, which is the actual use.
+**X video. DONE, via native tools.** The deferred decision went the other way in the end: rather
+than four tools an agent has to sequence while holding an upload session open, `degen-tools-core`
+0.1.1 gained `NativeTool`. A package file names a Rust handler with `"method": "NATIVE"` and
+`"url": "native:<id>"`, so the metadata stays declarative — `list`, `skill`, `/v1/tools` and MCP
+need no special case — and only the body is Rust. The call still passes the policy and is still
+recorded. Only a package compiled into the binary may name a handler; an installed package is
+someone else's JSON.
+
+`x_upload_video` does initialize, one call per 4 MB segment, finalize, then polls `STATUS` at the
+interval X asks for until transcoding ends, giving up after 15 minutes with the media id in hand.
+`x_upload_status` checks on one that was still processing. *Verified:* three tests against a
+server implementing all four endpoints — a 8 MB + 1 KB file becomes segments indexed 0, 1, 2 with
+the remainder last, finalize once, two status polls, and the account's bearer token on every
+call; an upload needing no transcode never polls; a `.png` is refused before the session is even
+opened, pointing at `x_upload_media`.
 
 **P5 — MCP. DONE. Gateway listener: not built.** `degen-portal mcp` speaks JSON-RPC 2.0 on
 stdin/stdout: `initialize` (echoing back any protocol revision from 2024-11-05 to 2026-07-28,

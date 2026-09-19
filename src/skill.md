@@ -103,10 +103,10 @@ and returns `{ok, status, error, response, duration_ms}`.
 
 Both providers take a local path: `x_upload_media --media ./hero.png` gives an
 id for `x_post --media_ids`, and `discord_upload_attachment --file ./chart.png`
-sends the file and the message in one call. Whatever path you name is read off
-this machine and published, so name only what the user asked to publish. X
-video is not supported; it needs a chunked upload flow that a single-request
-tool cannot express.
+sends the file and the message in one call. `x_upload_video --media ./clip.mp4`
+uploads a video in chunks and waits for X to transcode it, which can take
+minutes — call it once. Whatever path you name is read off this machine and
+published, so name only what the user asked to publish.
 
 ## Reading results
 
