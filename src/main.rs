@@ -5,7 +5,7 @@ use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
 use degen_tools_core::config::{load_credentials, lookup_credential};
 use degen_tools_core::errors::DegenError;
 use degen_tools_core::{auth, package, project, run, server, skill};
-use degen_portal::{DEFAULT_PORT, connect, init, ledger, mcp, oauth, policy, queue};
+use degen_portal::{DEFAULT_PORT, connect, gateway, init, ledger, mcp, oauth, policy, queue};
 
 /// View Channel, Send Messages, Read Message History, Add Reactions,
 /// Embed Links, Attach Files, Create Public Threads.
@@ -27,6 +27,7 @@ fn run() -> Result<(), DegenError> {
             None => connect::list()?,
             Some(AccountAction::Default { id }) => connect::set_default(&id)?,
             Some(AccountAction::Revoke { id }) => connect::revoke(&id)?,
+            Some(AccountAction::Secure { off }) => connect::secure(!off)?,
         },
         Commands::List => list()?,
         Commands::Run { out, json, secrets, save_secrets, creds, global, account, tool, args } => {
@@ -36,6 +37,7 @@ fn run() -> Result<(), DegenError> {
         Commands::Skill { name } => skill::show(name.as_deref())?,
         Commands::Discord { action } => discord(action)?,
         Commands::Mcp => mcp::serve()?,
+        Commands::Listen { channels, include_bots } => gateway::listen(channels, include_bots)?,
         Commands::Log { limit } => log(limit)?,
         Commands::Undo { post_id } => undo(post_id.as_deref())?,
         Commands::Queue => queue::list()?,

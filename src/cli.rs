@@ -100,6 +100,17 @@ pub enum Commands {
     /// Serve the tools over the Model Context Protocol on stdin/stdout
     Mcp,
 
+    /// Print Discord messages as they arrive, one JSON line each, until stopped
+    Listen {
+        /// Only these channel ids; omit for every channel the bot can see
+        #[arg(long = "channel", value_name = "ID")]
+        channels: Vec<String>,
+
+        /// Include messages from bots, including this one
+        #[arg(long)]
+        include_bots: bool,
+    },
+
     /// What has been published from this machine, newest last
     Log {
         /// How many entries
@@ -157,6 +168,13 @@ pub enum AccountAction {
 
     /// Revoke the token at the provider and forget the account here
     Revoke { id: String },
+
+    /// Move the tokens into the OS keychain, or back into the state file
+    Secure {
+        /// Move them back into ~/.degen-portal/accounts.json
+        #[arg(long)]
+        off: bool,
+    },
 }
 
 #[derive(Subcommand)]

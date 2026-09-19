@@ -111,6 +111,10 @@ pub struct Accounts {
     /// provider → account id, when more than one is connected.
     #[serde(default)]
     pub default: BTreeMap<String, String>,
+    /// When set, the tokens are in the OS keychain and this file holds only
+    /// which accounts exist, their scopes and their expiry.
+    #[serde(default)]
+    pub keychain: bool,
 }
 
 fn accounts_path() -> Result<PathBuf, DegenError> {
@@ -118,16 +122,50 @@ fn accounts_path() -> Result<PathBuf, DegenError> {
 }
 
 pub fn load() -> Result<Accounts, DegenError> {
+    load_with(&crate::secrets::Keychain)
+}
+
+pub fn load_with(store: &dyn crate::secrets::SecretStore) -> Result<Accounts, DegenError> {
     let path = accounts_path()?;
     if !path.is_file() {
         return Ok(Accounts::default());
     }
-    Ok(serde_json::from_str(&fs::read_to_string(&path)?)?)
+    let mut accounts: Accounts = serde_json::from_str(&fs::read_to_string(&path)?)?;
+    if accounts.keychain {
+        for (id, account) in accounts.accounts.iter_mut() {
+            account.access_token = store.get(&crate::secrets::access_key(id))?.unwrap_or_default();
+            account.refresh_token = store.get(&crate::secrets::refresh_key(id))?;
+        }
+    }
+    Ok(accounts)
 }
 
 /// Owner-only from the moment it exists, then renamed over the old file: a
 /// refresh token is never briefly world-readable and never half-written.
+/// With the keychain on, the tokens go there first and the file gets blanks.
 pub fn save(accounts: &Accounts) -> Result<(), DegenError> {
+    save_with(accounts, &crate::secrets::Keychain)
+}
+
+pub fn save_with(accounts: &Accounts, store: &dyn crate::secrets::SecretStore) -> Result<(), DegenError> {
+    let mut on_disk = Accounts { accounts: accounts.accounts.clone(), default: accounts.default.clone(), keychain: accounts.keychain };
+    if accounts.keychain {
+        for (id, account) in accounts.accounts.iter() {
+            // Stored before the file is written: a crash in between leaves a
+            // keychain entry with no account, which is harmless, rather than
+            // an account whose token is nowhere.
+            store.set(&crate::secrets::access_key(id), &account.access_token)?;
+            match &account.refresh_token {
+                Some(refresh) => store.set(&crate::secrets::refresh_key(id), refresh)?,
+                None => store.delete(&crate::secrets::refresh_key(id))?,
+            }
+        }
+        for account in on_disk.accounts.values_mut() {
+            account.access_token = String::new();
+            account.refresh_token = account.refresh_token.as_ref().map(|_| String::new());
+        }
+    }
+
     let path = accounts_path()?;
     let tmp = path.with_extension("json.tmp");
     let mut options = fs::OpenOptions::new();
@@ -138,7 +176,7 @@ pub fn save(accounts: &Accounts) -> Result<(), DegenError> {
         options.mode(0o600);
     }
     let mut file = options.open(&tmp)?;
-    file.write_all(serde_json::to_string_pretty(accounts)?.as_bytes())?;
+    file.write_all(serde_json::to_string_pretty(&on_disk)?.as_bytes())?;
     file.sync_all()?;
     fs::rename(&tmp, &path)?;
     Ok(())
@@ -643,6 +681,48 @@ mod tests {
     fn no_account_says_how_to_connect_one() {
         let err = select(&Accounts::default(), "x", None).unwrap_err().to_string();
         assert!(err.contains("degen-portal connect x"), "{err}");
+    }
+
+    /// The tokens move out of the state file and come back whole.
+    #[test]
+    fn the_keychain_holds_the_tokens_and_the_file_holds_none() {
+        let home = std::env::temp_dir().join(format!("degen-portal-keychain-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&home);
+        std::fs::create_dir_all(&home).unwrap();
+        // Safe: this is the only test in this binary that touches HOME.
+        unsafe { std::env::set_var("HOME", &home) };
+        crate::init();
+
+        let store = crate::secrets::memory::Memory::default();
+        let mut accounts = Accounts::default();
+        let mut a = account(now() + 3600);
+        a.handle = "kept".into();
+        a.access_token = "ACCESS-SECRET".into();
+        a.refresh_token = Some("REFRESH-SECRET".into());
+        accounts.accounts.insert("x:kept".to_string(), a);
+
+        // Off: the file is the store, as it always has been.
+        save_with(&accounts, &store).unwrap();
+        let file = home.join(".degen-portal/accounts.json");
+        assert!(std::fs::read_to_string(&file).unwrap().contains("REFRESH-SECRET"));
+
+        // On: the file keeps the account, not the secrets.
+        accounts.keychain = true;
+        save_with(&accounts, &store).unwrap();
+        let on_disk = std::fs::read_to_string(&file).unwrap();
+        assert!(!on_disk.contains("ACCESS-SECRET"), "the access token must not be in the file: {on_disk}");
+        assert!(!on_disk.contains("REFRESH-SECRET"), "and neither must the refresh token");
+        assert!(on_disk.contains("x:kept"), "the account itself still is");
+
+        // And they come back whole.
+        let reloaded = load_with(&store).unwrap();
+        let account = &reloaded.accounts["x:kept"];
+        assert_eq!(account.access_token, "ACCESS-SECRET");
+        assert_eq!(account.refresh_token.as_deref(), Some("REFRESH-SECRET"));
+        assert!(reloaded.keychain);
+        assert!(!account.expired(), "the expiry survives the round trip");
+
+        let _ = std::fs::remove_dir_all(&home);
     }
 
     #[test]

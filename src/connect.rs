@@ -221,3 +221,42 @@ pub fn revoke(id: &str) -> Result<(), DegenError> {
     }
     Ok(())
 }
+
+/// `degen-portal accounts secure [--off]` — move the tokens between the state
+/// file and the keychain. Both directions load first, so the tokens are in
+/// hand before anything is rewritten.
+pub fn secure(on: bool) -> Result<(), DegenError> {
+    let mut accounts = oauth::load()?;
+    if accounts.keychain == on {
+        println!("tokens are already in {}", if on { "the keychain" } else { "the state file" });
+        return Ok(());
+    }
+    if accounts.accounts.is_empty() {
+        accounts.keychain = on;
+        oauth::save(&accounts)?;
+        println!("no accounts yet; new ones will go in {}", if on { "the keychain" } else { "the state file" });
+        return Ok(());
+    }
+
+    let ids: Vec<String> = accounts.accounts.keys().cloned().collect();
+    accounts.keychain = on;
+    oauth::save(&accounts)?;
+    if !on {
+        // They are in the file now, so the keychain copies are stale secrets.
+        let store = crate::secrets::Keychain;
+        for id in &ids {
+            let _ = crate::secrets::SecretStore::delete(&store, &crate::secrets::access_key(id));
+            let _ = crate::secrets::SecretStore::delete(&store, &crate::secrets::refresh_key(id));
+        }
+    }
+    println!(
+        "moved {} account{} into {}",
+        ids.len(),
+        if ids.len() == 1 { "" } else { "s" },
+        if on { "the keychain" } else { "~/.degen-portal/accounts.json" }
+    );
+    if on {
+        println!("macOS will ask for permission the first time each rebuilt binary reads them.");
+    }
+    Ok(())
+}

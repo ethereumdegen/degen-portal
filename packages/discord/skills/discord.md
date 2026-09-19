@@ -88,7 +88,17 @@ application has the **Message Content** privileged intent enabled. Enable it in
 the Developer Portal under Bot -> Privileged Gateway Intents when an agent needs
 to read what other people said.
 
-There is no live connection: this polls. Nothing arrives while nothing asks.
+Polling is one way. The other is `degen-portal listen`, which a human starts:
+it holds a socket open to Discord and prints each new message as one JSON line
+on stdout, so an agent can read them as they arrive.
+
+```bash
+degen-portal listen --channel <channel id>     # one JSON line per message
+```
+
+It only reads. Replying is a separate `discord_send_message` call, through the
+allowlist like anything else — a listener that could also post is a bot that
+answers itself. Messages the bot wrote are dropped unless `--include-bots`.
 
 ## Tools
 

@@ -260,5 +260,3 @@ fn a_connected_account_becomes_the_authorization_header() {
         assert!(head.contains("authorization: Bearer live-access-token"), "the account's token must be sent: {head}");
     });
 }
-
-

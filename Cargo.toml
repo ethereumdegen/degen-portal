@@ -23,11 +23,17 @@ path = "src/main.rs"
 degen-tools-core = "0.1"
 clap = { version = "4", features = ["derive"] }
 include_dir = "0.7"
+keyring = { version = "3", features = ["apple-native", "sync-secret-service"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "multipart", "rustls-tls"] }
 sha2 = "0.10"
+futures-util = { version = "0.3", default-features = false, features = ["sink"] }
+tokio-tungstenite = { version = "0.28", features = ["rustls-tls-webpki-roots"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "signal", "time"] }
 
 [dev-dependencies]
 parking_lot = "0.12"
+futures-util = "0.3"
+tokio-tungstenite = "0.28"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time"] }

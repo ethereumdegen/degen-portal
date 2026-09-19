@@ -97,6 +97,11 @@ curl -s $DEGEN_PORTAL_URL/v1/run -H "Authorization: Bearer $DEGEN_PORTAL_TOKEN" 
 127.0.0.1 only, a fresh token per run, and requests carrying a browser `Origin`
 or a foreign `Host` are refused, so a web page cannot reach it.
 
+**Listening:** `degen-portal listen` holds Discord's gateway socket open and
+prints each message as one JSON line, so an agent can read a conversation as it
+happens instead of polling. It only reads; posting stays a separate call
+through the allowlist.
+
 **MCP:** `degen-portal mcp` speaks the Model Context Protocol on stdin/stdout.
 
 ```json
@@ -137,6 +142,8 @@ the metalcraft integration format, so a package runs here and in the agent.
 | `queue` / `approve` / `drop` | Calls held for a human |
 | `budget <provider>` / `approval <provider> auto\|queue` | Change the limits |
 | `mcp` | Serve the tools over MCP on stdin/stdout |
+| `listen [--channel ID]` | Print Discord messages as they arrive, one JSON line each |
+| `accounts secure [--off]` | Move the OAuth tokens into the OS keychain, or back |
 | `auth set\|get\|list\|remove` | Stored credentials |
 | `list` | Packages, credentials, accounts, budgets |
 
@@ -157,16 +164,19 @@ nearest one up to the git root) wins over the global store, so a side project
 can post as a different bot without touching anything else.
 
 A refresh token is permanent control of an account — worse than a revocable API
-key. It is stored 0600 like everything else; putting it in the macOS Keychain is
-the obvious next step.
+key. By default it is 0600 like everything else. `degen-portal accounts secure`
+moves the tokens into the OS keychain instead, where another process running as
+you cannot read them without a prompt; `accounts.json` then holds only which
+accounts exist, their scopes and their expiry.
+
+It is opt-in rather than the default because keychain permissions are
+per-binary on macOS: every rebuild is a new binary and a new prompt. Right for
+a tool you installed, wrong for one you are rebuilding every few minutes.
 
 ## Not here
 
 - **Anything hosted.** No relay, no broker, no always-on daemon. Close the
   laptop and nothing posts, which is the point.
-- **Reacting in real time.** Reading is polling (`discord_get_messages
-  --after`). A gateway listener would be an outbound WebSocket, and is not
-  written yet.
 
 ## Built on
 

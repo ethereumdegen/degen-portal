@@ -314,7 +314,7 @@ the remainder last, finalize once, two status polls, and the account's bearer to
 call; an upload needing no transcode never polls; a `.png` is refused before the session is even
 opened, pointing at `x_upload_media`.
 
-**P5 — MCP. DONE. Gateway listener: not built.** `degen-portal mcp` speaks JSON-RPC 2.0 on
+**P5 — MCP. DONE.** `degen-portal mcp` speaks JSON-RPC 2.0 on
 stdin/stdout: `initialize` (echoing back any protocol revision from 2024-11-05 to 2026-07-28,
 else the newest), `ping`, `tools/list`, `tools/call`. Every package tool is exposed with its own
 schema, plus `portal_status`, which answers "what may I do right now" — accounts and expiry,
@@ -331,10 +331,27 @@ Two bugs the tests found: `instructions` was shipping the YAML frontmatter, and 
 or unknown tool escaped as a JSON-RPC error, which most clients hide from the model. Both now
 come back as tool content the model can read and act on.
 
-**The Discord gateway listener is not written.** It is an outbound WebSocket with heartbeats,
-resume and intents — a long-running process, where everything else here is a one-shot command.
-Reading works today by polling `discord_get_messages --after`. Worth doing only if an agent
-genuinely needs to react within seconds.
+**The Discord gateway listener. DONE.** `degen-portal listen` holds an outbound WebSocket open
+and prints each message as one JSON line: identify with GUILDS | GUILD_MESSAGES |
+MESSAGE_CONTENT, heartbeat at the interval HELLO asks for, answer an op 1 request, treat op 7
+and op 9 as "start over", and reconnect with backoff to 60s. It **only reads** — replying is a
+separate `discord_send_message` through the allowlist, because a listener that could also post
+is a bot that answers itself. Its own messages are dropped unless `--include-bots`.
+*Verified:* two tests against a WebSocket server that behaves like Discord's — the IDENTIFY
+carries the token and both message intents, a heartbeat arrives, both dispatches come back
+parsed with `bot` set correctly, and a gateway that never says HELLO is an error rather than a
+hang.
+
+It stays a command of its own rather than something `serve` starts, so the "close the laptop and
+nothing posts" property holds: it runs while you run it.
+
+**Keychain for the OAuth tokens. DONE, opt-in.** `degen-portal accounts secure` moves the access
+and refresh tokens into the OS keychain and leaves `accounts.json` holding only which accounts
+exist, their scopes and their expiry; `--off` moves them back and deletes the keychain entries.
+Opt-in rather than default because keychain ACLs are per-binary on macOS: every rebuild is a new
+prompt, which is right for a tool you installed and wrong for one you are rebuilding. *Verified:*
+a round trip through an in-memory `SecretStore` — with it on, neither token appears in the file
+and both come back whole on load; with it off, the file is the store as before.
 
 Explicitly **not** in the plan: any deploy, any always-on host, scheduled posts, `accounts
 export/import`, a second machine. degen-portal runs when you run it. Close the laptop and it
