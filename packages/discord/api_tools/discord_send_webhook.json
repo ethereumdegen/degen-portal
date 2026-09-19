@@ -1,0 +1,41 @@
+{
+  "name": "discord_send_webhook",
+  "description": "POSTS IN PUBLIC: send a message through a channel webhook, with no bot and no permissions \u2014 the webhook URL is the whole credential, and it can only ever reach the one channel it was made for (Channel -> Edit Channel -> Integrations -> Webhooks). Store the URL with `degen-portal auth set DISCORD_WEBHOOK_URL`. Returns the created message. Mentions never notify anyone.",
+  "method": "POST",
+  "url": "$DISCORD_WEBHOOK_URL?wait=true",
+  "headers": {
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string",
+        "description": "The message text, up to 2000 characters."
+      },
+      "username": {
+        "type": "string",
+        "description": "Override the webhook's display name for this message."
+      },
+      "avatar_url": {
+        "type": "string",
+        "description": "Override the webhook's avatar for this message."
+      }
+    },
+    "required": [
+      "content"
+    ]
+  },
+  "body_mapping": "params_nested",
+  "body_defaults": {
+    "allowed_mentions": {
+      "parse": []
+    }
+  },
+  "allowed_hosts": [
+    "discord.com",
+    "discordapp.com",
+    "*.discord.com"
+  ]
+}

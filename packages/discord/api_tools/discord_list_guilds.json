@@ -1,0 +1,17 @@
+{
+  "name": "discord_list_guilds",
+  "description": "Servers this bot has been added to. Returns [{ id, name, permissions }]. If it is empty, the bot has not been invited yet: run `degen-portal discord invite`.",
+  "method": "GET",
+  "url": "https://discord.com/api/v10/users/@me/guilds",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "body_mapping": "none"
+}

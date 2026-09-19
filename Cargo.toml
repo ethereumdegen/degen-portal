@@ -1,0 +1,25 @@
+[package]
+name = "degen-portal"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.91"
+description = "degen-tools for social: Discord and X as HTTP tools an agent can call, with the accounts, allowlists and audit trail that posting in public needs"
+license = "MIT"
+publish = false
+readme = "PLAN.md"
+
+[lib]
+name = "degen_portal"
+path = "src/lib.rs"
+
+[[bin]]
+name = "degen-portal"
+path = "src/main.rs"
+
+[dependencies]
+degen-core = { path = "../degen-tools/core" }
+clap = { version = "4", features = ["derive"] }
+include_dir = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "signal", "time"] }

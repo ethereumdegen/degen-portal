@@ -1,0 +1,18 @@
+{
+  "id": "discord",
+  "name": "Discord",
+  "description": "Post and read in Discord over the v10 REST API (discord.com/api/v10) as a bot, or through a channel webhook with no bot at all. Send, edit, delete and react to messages; start threads; list servers and channels; read recent messages to follow a conversation. The bot token is stored as DISCORD_BOT_TOKEN and never printed. Writing to a channel requires a human to have allowed that channel id on this machine. Mentions are rendered as text: an agent cannot ping @everyone.",
+  "version": "0.1.0",
+  "requires_env": [
+    "DISCORD_BOT_TOKEN",
+    "DISCORD_WEBHOOK_URL",
+    "DISCORD_CLIENT_ID"
+  ],
+  "tags": [
+    "discord",
+    "social",
+    "chat",
+    "messaging",
+    "bot"
+  ]
+}

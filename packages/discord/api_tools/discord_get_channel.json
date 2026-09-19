@@ -1,0 +1,24 @@
+{
+  "name": "discord_get_channel",
+  "description": "One channel's details: name, topic, type, guild_id, whether it is a thread.",
+  "method": "GET",
+  "url": "https://discord.com/api/v10/channels/{channel_id}",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "channel_id": {
+        "type": "string",
+        "description": "Discord channel id, e.g. '1180000000000000000'. Right-click the channel -> Copy Channel ID (Developer Mode on), or use discord_list_channels."
+      }
+    },
+    "required": [
+      "channel_id"
+    ]
+  },
+  "body_mapping": "none"
+}

@@ -1,0 +1,46 @@
+{
+  "name": "discord_send_message",
+  "description": "POSTS IN PUBLIC: send a message to a channel. Returns the created message, whose `id` is what discord_edit_message, discord_delete_message and discord_add_reaction take. Mentions never notify anyone: @everyone, @here and role pings are rendered as text. If this call fails, read the error and stop \u2014 do not call it again, or the same message lands twice.",
+  "method": "POST",
+  "url": "https://discord.com/api/v10/channels/{channel_id}/messages",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "channel_id": {
+        "type": "string",
+        "description": "Discord channel id, e.g. '1180000000000000000'. Right-click the channel -> Copy Channel ID (Developer Mode on), or use discord_list_channels."
+      },
+      "content": {
+        "type": "string",
+        "description": "The message text, up to 2000 characters. Markdown works: **bold**, `code`, ```blocks```, <https://links.without.preview>."
+      },
+      "reply_to": {
+        "type": "string",
+        "description": "Message id to reply to, making this a threaded reply in the channel."
+      },
+      "thread_name": {
+        "type": "string",
+        "description": "Only for forum channels (type 15): the title of the post to create."
+      }
+    },
+    "required": [
+      "channel_id",
+      "content"
+    ]
+  },
+  "body_mapping": "params_nested",
+  "param_paths": {
+    "reply_to": "message_reference.message_id",
+    "thread_name": "thread_name"
+  },
+  "body_defaults": {
+    "allowed_mentions": {
+      "parse": []
+    }
+  }
+}

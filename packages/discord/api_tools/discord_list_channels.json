@@ -1,0 +1,24 @@
+{
+  "name": "discord_list_channels",
+  "description": "Channels in a server, to find the id to post in. Returns [{ id, name, type, parent_id }]; type 0 is a text channel, 15 a forum, 2 voice. Reading this does not make a channel writable \u2014 a human still has to run `degen-portal discord allow <channel id>`.",
+  "method": "GET",
+  "url": "https://discord.com/api/v10/guilds/{guild_id}/channels",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "guild_id": {
+        "type": "string",
+        "description": "Server id, from discord_list_guilds."
+      }
+    },
+    "required": [
+      "guild_id"
+    ]
+  },
+  "body_mapping": "none"
+}

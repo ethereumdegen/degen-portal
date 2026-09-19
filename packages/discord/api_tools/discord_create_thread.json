@@ -1,0 +1,38 @@
+{
+  "name": "discord_create_thread",
+  "description": "POSTS IN PUBLIC: start a thread hanging off an existing message. Returns the thread channel, whose `id` is a channel id \u2014 one a human must allow before the bot can write in it.",
+  "method": "POST",
+  "url": "https://discord.com/api/v10/channels/{channel_id}/messages/{message_id}/threads",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "channel_id": {
+        "type": "string",
+        "description": "Discord channel id, e.g. '1180000000000000000'. Right-click the channel -> Copy Channel ID (Developer Mode on), or use discord_list_channels."
+      },
+      "message_id": {
+        "type": "string",
+        "description": "Message id, from the `id` of a message discord_send_message or discord_get_messages returned."
+      },
+      "name": {
+        "type": "string",
+        "description": "Thread title, up to 100 characters."
+      },
+      "auto_archive_duration": {
+        "type": "integer",
+        "description": "Minutes of silence before it archives: 60, 1440, 4320 or 10080."
+      }
+    },
+    "required": [
+      "channel_id",
+      "message_id",
+      "name"
+    ]
+  },
+  "body_mapping": "params_nested"
+}

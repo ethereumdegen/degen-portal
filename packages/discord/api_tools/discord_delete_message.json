@@ -1,0 +1,29 @@
+{
+  "name": "discord_delete_message",
+  "description": "DESTRUCTIVE: delete a message. The bot's own messages always; anyone else's with Manage Messages. Returns an empty body on success (HTTP 204). This is the undo for discord_send_message.",
+  "method": "DELETE",
+  "url": "https://discord.com/api/v10/channels/{channel_id}/messages/{message_id}",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "channel_id": {
+        "type": "string",
+        "description": "Discord channel id, e.g. '1180000000000000000'. Right-click the channel -> Copy Channel ID (Developer Mode on), or use discord_list_channels."
+      },
+      "message_id": {
+        "type": "string",
+        "description": "Message id, from the `id` of a message discord_send_message or discord_get_messages returned."
+      }
+    },
+    "required": [
+      "channel_id",
+      "message_id"
+    ]
+  },
+  "body_mapping": "none"
+}

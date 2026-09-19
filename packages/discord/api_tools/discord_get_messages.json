@@ -1,0 +1,36 @@
+{
+  "name": "discord_get_messages",
+  "description": "Recent messages in a channel, newest first. Returns [{ id, content, author: { id, username, bot }, timestamp }]. Use `after` with the last id you saw to poll for replies. Reading message content needs the Message Content intent enabled for the app when the bot did not write the message.",
+  "method": "GET",
+  "url": "https://discord.com/api/v10/channels/{channel_id}/messages?limit={limit}&after={after}&before={before}",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "channel_id": {
+        "type": "string",
+        "description": "Discord channel id, e.g. '1180000000000000000'. Right-click the channel -> Copy Channel ID (Developer Mode on), or use discord_list_channels."
+      },
+      "limit": {
+        "type": "integer",
+        "description": "How many messages, 1-100. Default 50."
+      },
+      "after": {
+        "type": "string",
+        "description": "Return messages posted after this message id (for polling)."
+      },
+      "before": {
+        "type": "string",
+        "description": "Return messages posted before this message id (for paging back)."
+      }
+    },
+    "required": [
+      "channel_id"
+    ]
+  },
+  "body_mapping": "none"
+}

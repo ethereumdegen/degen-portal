@@ -1,0 +1,17 @@
+{
+  "name": "discord_me",
+  "description": "Who the bot token belongs to. Returns { id, username, bot }. Call this first to check a token works; it needs no permissions and posts nothing.",
+  "method": "GET",
+  "url": "https://discord.com/api/v10/users/@me",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "body_mapping": "none"
+}
