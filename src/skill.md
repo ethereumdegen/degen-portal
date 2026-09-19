@@ -99,6 +99,15 @@ curl -s $DEGEN_PORTAL_URL/v1/run -H "Authorization: Bearer $DEGEN_PORTAL_TOKEN" 
 and returns `{ok, status, error, response, duration_ms}`.
 `GET /v1/packages/{id}` returns a package's guide and every tool's schema.
 
+## Files
+
+Both providers take a local path: `x_upload_media --media ./hero.png` gives an
+id for `x_post --media_ids`, and `discord_upload_attachment --file ./chart.png`
+sends the file and the message in one call. Whatever path you name is read off
+this machine and published, so name only what the user asked to publish. X
+video is not supported; it needs a chunked upload flow that a single-request
+tool cannot express.
+
 ## Reading results
 
 - Exit code 0: success; the response body is on stdout. For a post, the `id` in

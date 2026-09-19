@@ -285,8 +285,26 @@ issuing the DELETE.
 Core grew two seams for it: `CallPolicy::check` now returns a `Verdict` (`Send` or `Hold`, so a
 policy can answer without calling out) and `CallPolicy::record` runs after every non-GET call.
 
-**P4 — Media.** `multipart` body mapping, chunked X upload with processing poll, Discord
-attachments. *Done when:* an image posts to both platforms from a local path.
+**P4 — Media. DONE for images; video deferred, see below.** Core gained the `multipart` body
+mapping: `file_params` names the arguments that are paths, `param_paths` renames a parameter to
+the form field an API wants (Discord's `files[0]`), and `payload_json_field` packs the remaining
+arguments into one JSON field (Discord's `payload_json`). Files are read with a 512 MB ceiling
+and a content type from the extension, because an API that checks the type rejects
+`application/octet-stream`. Tools: `x_upload_media` (X's simple upload, images and GIFs, then
+`x_post --media_ids`) and `discord_upload_attachment` (file and message in one request).
+*Verified:* 46 tests. Three core unit tests on the split, three wire tests against a server that
+parses the body — field names, `filename`, `Content-Type: image/png`, the PNG's own bytes, the
+boundary, and that the tool's own `Content-Type` header does not survive to break it. An upload
+to an unallowed channel is refused like any other write, and a missing file fails before
+anything is sent. Also demonstrated at the CLI: upload, then a post carrying `media.media_ids`.
+
+**X video is not implemented, and it is not a small gap.** It needs four calls —
+`initialize`, `append` per 5 MB chunk, `finalize`, then poll `STATUS` until processing ends.
+Every tool here is exactly one HTTP request, by design: that is what makes a package declarative
+JSON that the metalcraft agent can also run. Supporting video means a composite tool — a Rust
+implementation registered beside the JSON ones and dispatched by `run` and `/v1/run`. That is a
+real change to what a tool *is*, so it is a decision to take deliberately rather than smuggle in
+under "media". Images cover posting charts, screenshots and art, which is the actual use.
 
 **P5 — Optional, only if wanted.** Discord gateway listener (outbound WS) so agents can *react*
 rather than only post, and an MCP stdio adapter. Both run in the same local daemon.

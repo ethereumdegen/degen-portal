@@ -97,11 +97,28 @@ with `--since_id` rather than re-reading the same timeline.
 | `x_search_recent` | Search the last 7 days. |
 | `x_list_mentions` | What mentions the account, for replying. |
 | `x_list_posts` | What the account already said. |
+| `x_upload_media` | Upload an image and get the id to attach. |
 | `x_like` / `x_unlike` | Like, visibly. |
 | `x_repost` / `x_unrepost` | Put someone else's words on the timeline. Publishing, in effect. |
 
-Media upload is not here yet: it needs chunked uploads, which land with the
-`multipart` body mapping.
+## Images
+
+```bash
+degen-portal run x_upload_media --media ./out/hero.png     # -> { "data": { "id": "1880..." } }
+degen-portal run x_post --text "ship" --media_ids '["1880..."]'
+```
+
+Up to 4 images per post, or 1 animated GIF, 5 MB each (15 MB for a GIF). The
+upload is a billed call of its own, and it counts nothing against the post
+budget — the post does.
+
+The file is read off this machine and published. Upload what the user asked you
+to publish and nothing else.
+
+**Video is not supported.** X requires a four-call chunked flow
+(initialize, append each 5 MB chunk, finalize, then poll until processing
+finishes), and a tool here is one HTTP request. Say so rather than trying to
+improvise it.
 
 ## When something fails
 

@@ -1,0 +1,46 @@
+{
+  "name": "discord_upload_attachment",
+  "description": "POSTS IN PUBLIC: send a file to a channel, with optional text alongside it. Takes a path to a file on this machine (Discord's free limit is 10 MB). Returns the created message. The channel must be on this machine's allowlist, like any other write. The file is read from disk and published, so upload only what the user meant to publish.",
+  "method": "POST",
+  "url": "https://discord.com/api/v10/channels/{channel_id}/messages",
+  "headers": {
+    "Authorization": "Bot $DISCORD_BOT_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "channel_id": {
+        "type": "string",
+        "description": "Discord channel id. Must be allowed by a human first."
+      },
+      "file": {
+        "type": "string",
+        "description": "Path to the file on this machine, e.g. './out/chart.png'."
+      },
+      "content": {
+        "type": "string",
+        "description": "Optional message text to send with the file, up to 2000 characters."
+      }
+    },
+    "required": [
+      "channel_id",
+      "file"
+    ]
+  },
+  "body_mapping": "multipart",
+  "file_params": [
+    "file"
+  ],
+  "payload_json_field": "payload_json",
+  "body_defaults": {
+    "allowed_mentions": {
+      "parse": []
+    }
+  },
+  "post_id_path": "id",
+  "timeout_secs": 120,
+  "param_paths": {
+    "file": "files[0]"
+  }
+}

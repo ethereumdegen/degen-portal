@@ -66,6 +66,16 @@ Two limits apply before the API is called: the same message to the same channel
 inside 15 minutes is refused as a repeat, and 30 messages an hour (200 a day)
 is the default cap. Both refuse without sending anything.
 
+## Files
+
+```bash
+degen-portal run discord_upload_attachment --channel_id C --file ./out/chart.png --content "last week"
+```
+
+One request: the file and the message go together. The channel still has to be
+allowed. Discord's limit is 10 MB without a boost. The file is read off this
+machine and published, so send only what the user asked for.
+
 ## Reading a conversation
 
 ```bash
@@ -94,6 +104,7 @@ There is no live connection: this polls. Nothing arrives while nothing asks.
 | `discord_delete_message` | Delete. The undo for a bad post. |
 | `discord_add_reaction` | React as the bot. |
 | `discord_create_thread` | Thread off a message. The new thread is itself a channel, and needs allowing before the bot can write in it. |
+| `discord_upload_attachment` | Send a file, with optional text, in one call. |
 | `discord_send_webhook` | Post through a webhook URL, no bot involved. |
 
 ## When something fails

@@ -1,0 +1,38 @@
+{
+  "name": "x_upload_media",
+  "description": "Upload an image so a post can carry it. COSTS MONEY (a billed API call). Takes a path to a file on this machine, up to 5 MB: JPG, PNG, GIF or WEBP. Returns { data: { id } } \u2014 pass that id to x_post as --media_ids. A post may carry up to 4 images, or 1 animated GIF. Video is not supported: it needs X's four-call chunked upload. The file is read from disk and published, so upload only what the user meant to publish.",
+  "method": "POST",
+  "url": "https://api.x.com/2/media/upload",
+  "headers": {
+    "Authorization": "Bearer $X_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "media": {
+        "type": "string",
+        "description": "Path to the image on this machine, e.g. './out/hero.png'."
+      },
+      "media_category": {
+        "type": "string",
+        "description": "'tweet_image' (default) or 'tweet_gif'.",
+        "enum": [
+          "tweet_image",
+          "tweet_gif"
+        ]
+      }
+    },
+    "required": [
+      "media"
+    ]
+  },
+  "body_mapping": "multipart",
+  "file_params": [
+    "media"
+  ],
+  "body_defaults": {
+    "media_category": "tweet_image"
+  },
+  "timeout_secs": 120
+}

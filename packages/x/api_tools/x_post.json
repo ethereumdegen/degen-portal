@@ -1,6 +1,6 @@
 {
   "name": "x_post",
-  "description": "POSTS IN PUBLIC, COSTS MONEY: publish a post on X. Returns { data: { id, text } }; the id is what x_delete_post takes. Text is capped at 280 characters unless the account is on a Pro tier. Every call is billed per post under X's pay-per-use pricing. If this fails, read the error and stop \u2014 retrying is how the same thing gets posted twice.",
+  "description": "POSTS IN PUBLIC, COSTS MONEY: publish a post on X. Returns { data: { id, text } }; the id is what x_delete_post takes. Attach images by uploading them with x_upload_media first and passing --media_ids. Text is capped at 280 characters unless the account is on a Pro tier. Every call is billed per post under X's pay-per-use pricing. If this fails, read the error and stop \u2014 retrying is how the same thing gets posted twice.",
   "method": "POST",
   "url": "https://api.x.com/2/tweets",
   "headers": {
@@ -37,6 +37,13 @@
       "reply_settings": {
         "type": "string",
         "description": "Who may reply: 'following' or 'mentionedUsers'. Default is everyone."
+      },
+      "media_ids": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Ids from x_upload_media: up to 4 images, or 1 GIF. Attaching media to a reply or quote is fine."
       }
     },
     "required": [
@@ -49,7 +56,8 @@
     "quote_id": "quote_tweet_id",
     "poll_options": "poll.options",
     "poll_minutes": "poll.duration_minutes",
-    "reply_settings": "reply_settings"
+    "reply_settings": "reply_settings",
+    "media_ids": "media.media_ids"
   },
   "post_id_path": "data.id"
 }
