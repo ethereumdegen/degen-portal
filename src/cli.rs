@@ -97,6 +97,49 @@ pub enum Commands {
         action: DiscordAction,
     },
 
+    /// What has been published from this machine, newest last
+    Log {
+        /// How many entries
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+    },
+
+    /// Delete something that was published: the last post, or one by id
+    Undo {
+        /// Post id; omitted means the most recent published post
+        post_id: Option<String>,
+    },
+
+    /// Calls held for approval
+    Queue,
+
+    /// Send a held call
+    Approve { id: String },
+
+    /// Discard a held call
+    Drop { id: String },
+
+    /// Show or change how much a provider may publish
+    Budget {
+        /// Provider: x or discord
+        provider: String,
+
+        #[arg(long)]
+        per_hour: Option<usize>,
+
+        #[arg(long)]
+        per_day: Option<usize>,
+    },
+
+    /// Require a human to release every call for a provider, or stop requiring it
+    Approval {
+        /// Provider: x or discord
+        provider: String,
+
+        /// auto or queue
+        mode: String,
+    },
+
     /// Manage stored credentials by name (DISCORD_BOT_TOKEN, ...)
     Auth {
         #[command(subcommand)]

@@ -50,5 +50,6 @@
     "poll_options": "poll.options",
     "poll_minutes": "poll.duration_minutes",
     "reply_settings": "reply_settings"
-  }
+  },
+  "post_id_path": "data.id"
 }

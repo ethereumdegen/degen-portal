@@ -63,6 +63,16 @@ degen-portal run x_post --text "pick one" --poll_options '["a","b"]' --poll_minu
 - `--reply_settings following` or `mentionedUsers` limits who can reply.
 
 Undo is `x_delete_post --id <id>`. It works only on the account's own posts.
+`degen-portal undo` deletes the most recent post without you needing the id.
+
+### Limits that apply before the API is even called
+
+- **The same text twice inside 15 minutes is refused**, naming the post you
+  already made. A timeout is not proof the post failed — check `degen-portal
+  log` or `x_list_posts` before concluding anything.
+- **10 posts an hour and 20 a day** by default. The refusal says when a slot
+  frees. Report it; do not spin.
+- X also refuses duplicate content server-side, with HTTP 403.
 
 ## Reading
 

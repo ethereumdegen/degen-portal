@@ -59,7 +59,12 @@ degen-portal run discord_send_message --channel_id 1180000000000000000 --content
 - Forum channels (type 15) need `--thread_name`; a plain `content` post fails.
 
 Undo is `discord_delete_message --channel_id C --message_id M`. It returns an
-empty body and HTTP 204; that is success.
+empty body and HTTP 204; that is success. `degen-portal undo` deletes the most
+recent message without you needing the ids.
+
+Two limits apply before the API is called: the same message to the same channel
+inside 15 minutes is refused as a repeat, and 30 messages an hour (200 a day)
+is the default cap. Both refuse without sending anything.
 
 ## Reading a conversation
 

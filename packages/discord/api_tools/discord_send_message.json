@@ -42,5 +42,6 @@
     "allowed_mentions": {
       "parse": []
     }
-  }
+  },
+  "post_id_path": "id"
 }

@@ -269,9 +269,21 @@ credentials needed.
 
 Not done in P2, by design: media (P4), and any limit on how much an agent may post (P3).
 
-**P3 — Safety layer.** Dedupe, budgets, no-retry semantics, audit log, `undo`, approval queue in
-the TUI. *Done when:* the same `x_post` twice produces one tweet, and a budget-exhausted account
-returns a refusal with a reset time.
+**P3 — Safety layer. DONE.** One append-only ledger (`~/.degen-portal/ledger.jsonl`) answers all
+three questions that need the same facts: did I already post this, how much have I posted, and
+how do I take it back. A call publishes when its tool declares `post_id_path`; edits, deletes and
+reactions are written down but neither counted nor deduplicated. Gates, cheapest first: the
+Discord channel allowlist, a 15-minute repeat window, hourly and daily caps (X 10/20, Discord
+30/200 by default), and an optional approval queue where a call is held instead of sent. Nothing
+is ever retried automatically. New commands: `log`, `undo`, `queue`, `approve`, `drop`, `budget`,
+`approval`. *Verified:* 38 tests. The acceptance cases assert against a server that counts what
+arrives: two identical posts produce **one** request, an exhausted budget refuses with the
+minutes until a slot frees, a queued call never reaches the wire until `approve`, and a dropped
+one never does at all. Also proven at the CLI end to end — post, refused repeat, `log`, `undo`
+issuing the DELETE.
+
+Core grew two seams for it: `CallPolicy::check` now returns a `Verdict` (`Send` or `Hold`, so a
+policy can answer without calling out) and `CallPolicy::record` runs after every non-GET call.
 
 **P4 — Media.** `multipart` body mapping, chunked X upload with processing poll, Discord
 attachments. *Done when:* an image posts to both platforms from a local path.

@@ -5,7 +5,7 @@ use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
 use degen_core::config::{load_credentials, lookup_credential};
 use degen_core::errors::DegenError;
 use degen_core::{auth, package, project, run, server, skill};
-use degen_portal::{DEFAULT_PORT, connect, init, oauth, policy};
+use degen_portal::{DEFAULT_PORT, connect, init, ledger, oauth, policy, queue};
 
 /// View Channel, Send Messages, Read Message History, Add Reactions,
 /// Embed Links, Attach Files, Create Public Threads.
@@ -35,6 +35,13 @@ fn run() -> Result<(), DegenError> {
         }
         Commands::Skill { name } => skill::show(name.as_deref())?,
         Commands::Discord { action } => discord(action)?,
+        Commands::Log { limit } => log(limit)?,
+        Commands::Undo { post_id } => undo(post_id.as_deref())?,
+        Commands::Queue => queue::list()?,
+        Commands::Approve { id } => queue::approve(&id)?,
+        Commands::Drop { id } => queue::drop_held(&id)?,
+        Commands::Budget { provider, per_hour, per_day } => budget(&provider, per_hour, per_day)?,
+        Commands::Approval { provider, mode } => approval(&provider, &mode)?,
         Commands::Auth { action } => match action {
             AuthAction::Set { name, value, global } => auth::set(&name, value.as_deref(), global)?,
             AuthAction::Get { name, unmask } => auth::get(&name, unmask)?,
@@ -94,6 +101,95 @@ fn discord(action: DiscordAction) -> Result<(), DegenError> {
             Ok(())
         }
     }
+}
+
+/// `degen-portal log`.
+fn log(limit: usize) -> Result<(), DegenError> {
+    let entries = ledger::read();
+    if entries.is_empty() {
+        println!("Nothing has been published from this machine.");
+        return Ok(());
+    }
+    for entry in entries.iter().rev().take(limit).rev() {
+        let mark = if entry.ok { " " } else { "!" };
+        let when = ago(entry.at);
+        let what = entry.permalink.clone().or_else(|| entry.post_id.clone()).unwrap_or_else(|| format!("HTTP {}", entry.status));
+        println!("{mark} {when:>8}  {:<24} {:<16} {what}", entry.tool, entry.target);
+    }
+    let now = oauth::now();
+    let policy = policy::load()?;
+    println!();
+    for provider in ["x", "discord"] {
+        let budget = policy.budget(provider);
+        let hour = ledger::published_since(&entries, provider, 3600, now);
+        let day = ledger::published_since(&entries, provider, 86_400, now);
+        println!("  {provider}: {hour}/{} this hour, {day}/{} today", budget.per_hour, budget.per_day);
+    }
+    Ok(())
+}
+
+fn ago(at: u64) -> String {
+    let secs = oauth::now().saturating_sub(at);
+    match secs {
+        0..=90 => format!("{secs}s ago"),
+        91..=5400 => format!("{}m ago", secs / 60),
+        5401..=172_800 => format!("{}h ago", secs / 3600),
+        _ => format!("{}d ago", secs / 86_400),
+    }
+}
+
+/// `degen-portal undo` — delete the most recent post, or a named one.
+fn undo(post_id: Option<&str>) -> Result<(), DegenError> {
+    let entries = ledger::read();
+    let entry = entries
+        .iter()
+        .rev()
+        .filter(|e| e.ok && e.undo.is_some())
+        .find(|e| post_id.is_none_or(|id| e.post_id.as_deref() == Some(id)))
+        .ok_or_else(|| {
+            DegenError::InvalidArgs(match post_id {
+                Some(id) => format!("nothing published as '{id}' can be undone from the ledger. `degen-portal log` lists what can."),
+                None => "nothing published from this machine can be undone.".to_string(),
+            })
+        })?;
+    let undo = entry.undo.clone().expect("filtered on Some");
+
+    let (pkg, tool) = package::find_tool(&undo.tool)?;
+    let opts = run::RunOptions { account: Some(entry.target.clone()).filter(|t| t.contains(':')), ..Default::default() };
+    let outcome = run::execute(&pkg, &tool, undo.args, &opts)?;
+    match outcome.error {
+        Some(error) => Err(DegenError::Http(error)),
+        None => {
+            println!("deleted {} ({})", entry.post_id.as_deref().unwrap_or("it"), entry.tool);
+            Ok(())
+        }
+    }
+}
+
+fn budget(provider: &str, per_hour: Option<usize>, per_day: Option<usize>) -> Result<(), DegenError> {
+    let current = policy::load()?.budget(provider);
+    if per_hour.is_none() && per_day.is_none() {
+        println!("{provider}: {} per hour, {} per day", current.per_hour, current.per_day);
+        return Ok(());
+    }
+    let next = policy::Budget {
+        per_hour: per_hour.unwrap_or(current.per_hour),
+        per_day: per_day.unwrap_or(current.per_day),
+    };
+    policy::set_budget(provider, next)?;
+    println!("{provider}: {} per hour, {} per day", next.per_hour, next.per_day);
+    Ok(())
+}
+
+fn approval(provider: &str, mode: &str) -> Result<(), DegenError> {
+    let approval = match mode {
+        "auto" => policy::Approval::Auto,
+        "queue" => policy::Approval::Queue,
+        other => return Err(DegenError::InvalidArgs(format!("'{other}' is not an approval mode; use 'auto' or 'queue'"))),
+    };
+    policy::set_approval(provider, approval)?;
+    println!("{provider}: {}", if approval == policy::Approval::Queue { "every call waits for `degen-portal approve`" } else { "calls go out as they come" });
+    Ok(())
 }
 
 fn list() -> Result<(), DegenError> {

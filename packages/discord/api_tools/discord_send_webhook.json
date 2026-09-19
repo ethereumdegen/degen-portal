@@ -37,5 +37,6 @@
     "discord.com",
     "discordapp.com",
     "*.discord.com"
-  ]
+  ],
+  "post_id_path": "id"
 }

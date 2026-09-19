@@ -34,5 +34,6 @@
       "name"
     ]
   },
-  "body_mapping": "params_nested"
+  "body_mapping": "params_nested",
+  "post_id_path": "id"
 }

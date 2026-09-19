@@ -28,12 +28,32 @@ there until it is deleted. Act accordingly:
 ```bash
 degen-portal list                             # packages, credentials, connected accounts
 degen-portal accounts                         # X accounts and when each token expires
+degen-portal log                              # what was published, and how much budget is left
 degen-portal skill <package>                  # a package's guide and every tool's parameters
 degen-portal skill <tool>                     # one tool's parameters
 degen-portal run <tool> --param value ...     # call a tool
 degen-portal run --json '{...}' <tool>        # arguments as JSON (or --json @file.json)
 degen-portal discord channels                 # which channels may be written to
 ```
+
+## What will refuse you, and why
+
+Four gates sit in front of every write. All of them refuse *before* anything is
+sent, so a refusal means nothing happened — it is not a partial post.
+
+1. **The channel allowlist** (Discord). Ask a human; do not look for a way
+   around it.
+2. **Repeats.** Publishing exactly the same thing twice inside 15 minutes is
+   refused, and the refusal names the post you already made. This is what
+   catches a retry after a timeout. **If you get it, you already succeeded.**
+3. **Budgets.** Each provider has an hourly and a daily cap on published calls.
+   The refusal says when the next slot frees. Do not sit in a loop waiting for
+   it; report it and stop.
+4. **Approval.** A provider can be set to hold calls for a human. You get
+   `{"queued": "q1"}` and the call is not sent. Tell the user it is waiting.
+
+`degen-portal log` shows what has been published and how much of each budget is
+left. Read it before a burst of posts, not after.
 
 ## Accounts and the allowlist
 
