@@ -24,6 +24,14 @@ fn with_state_home<T>(name: &str, body: impl FnOnce(u16, Arc<AtomicUsize>) -> T)
     unsafe { std::env::set_var("HOME", &dir) };
     degen_portal::init();
 
+    // The x package is signed now, so the fixture needs credentials like a
+    // real one. These tests are about budgets and repeats, not auth.
+    let mut creds = degen_tools_core::config::load_credentials().unwrap();
+    for (name, value) in [("X_API_KEY", "k"), ("X_API_SECRET", "s"), ("X_ACCESS_TOKEN", "t"), ("X_ACCESS_TOKEN_SECRET", "ts")] {
+        creds.keys.insert(name.to_string(), value.to_string());
+    }
+    degen_tools_core::config::save_credentials(&creds).unwrap();
+
     let (port, hits) = mock_api();
     write_package(port);
     let out = body(port, hits);

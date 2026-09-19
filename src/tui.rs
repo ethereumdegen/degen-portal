@@ -321,10 +321,18 @@ fn draw_header(f: &mut Frame, area: Rect, dash: &Dashboard) {
 fn draw_accounts(f: &mut Frame, area: Rect, dash: &Dashboard) {
     let mut lines: Vec<Line> = Vec::new();
     if dash.accounts.accounts.is_empty() {
-        lines.push(Line::from(vec![
-            Span::styled("  no X account connected", Style::new().fg(YELLOW)),
-            Span::styled("   degen-portal connect x", Style::new().fg(BG_DIM)),
-        ]));
+        let keys = crate::xauth::keys(&degen_tools_core::config::load_credentials().unwrap_or_default()).is_some();
+        lines.push(if keys {
+            Line::from(vec![
+                Span::styled("   x               ", Style::new().fg(BG_DIM)),
+                Span::styled("OAuth 1.0a keys — no expiry, no browser", Style::new().fg(GREEN)),
+            ])
+        } else {
+            Line::from(vec![
+                Span::styled("  no X credentials", Style::new().fg(YELLOW)),
+                Span::styled("   connect x, or set the four X_API_* keys", Style::new().fg(BG_DIM)),
+            ])
+        });
     }
     for (id, account) in &dash.accounts.accounts {
         let default = dash.accounts.default.get(&account.provider) == Some(id);
@@ -624,7 +632,7 @@ mod tests {
     fn an_empty_dashboard_says_what_to_do_next() {
         let screen = rendered(&dashboard());
         assert!(screen.contains("DEGEN-PORTAL"), "{screen}");
-        assert!(screen.contains("degen-portal connect x"), "an empty accounts panel should say how to fill it");
+        assert!(screen.contains("connect x"), "an empty accounts panel should say how to fill it");
         assert!(screen.contains("no provider holds calls"), "and the queue should explain itself");
         assert!(screen.contains("degen-portal discord allow <id>"), "so should an empty allowlist");
         assert!(screen.contains("0/10") && screen.contains("this hour"), "the budget is visible before anything is spent");

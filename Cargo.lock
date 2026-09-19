@@ -464,6 +464,7 @@ dependencies = [
  "clap",
  "degen-tools-core",
  "futures-util",
+ "hmac",
  "include_dir",
  "keyring",
  "parking_lot",
@@ -471,6 +472,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha1",
  "sha2",
  "tokio",
  "tokio-tungstenite",
@@ -478,9 +480,9 @@ dependencies = [
 
 [[package]]
 name = "degen-tools-core"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06e524e5c43a497c805281742280d80bc794efaacb51fd7cb74676c77d554dee"
+checksum = "057d079b0ee5e7475ee044bab127bb3ab240e3ab612f202024408f2c38fc1527"
 dependencies = [
  "axum",
  "dirs",
@@ -541,6 +543,7 @@ checksum = "9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292"
 dependencies = [
  "block-buffer",
  "crypto-common",
+ "subtle",
 ]
 
 [[package]]
@@ -780,6 +783,15 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
+name = "hmac"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
+dependencies = [
+ "digest",
+]
 
 [[package]]
 name = "http"

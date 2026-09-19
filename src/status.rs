@@ -16,8 +16,13 @@ pub fn status() -> Result<String, DegenError> {
     let now = oauth::now();
 
     let mut out = String::new();
+    out.push_str(&format!("x authenticates with {}\n", crate::xauth::describe()));
     if accounts.accounts.is_empty() {
-        out.push_str("No X account is connected. A human connects one with `degen-portal connect x`.\n");
+        // Keys need no account, so this is only worth saying when there is
+        // also nothing else configured.
+        if !crate::xauth::configured() {
+            out.push_str("No X account is connected. A human connects one with `degen-portal connect x`.\n");
+        }
     } else {
         for (id, account) in &accounts.accounts {
             let default = if accounts.default.get(&account.provider) == Some(id) { " (default)" } else { "" };

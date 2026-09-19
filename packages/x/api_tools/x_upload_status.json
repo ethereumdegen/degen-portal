@@ -4,7 +4,6 @@
   "method": "GET",
   "url": "https://api.x.com/2/media/upload?command=STATUS&media_id={media_id}",
   "headers": {
-    "Authorization": "Bearer $X_ACCESS_TOKEN",
     "Accept": "application/json"
   },
   "parameters": {

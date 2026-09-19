@@ -362,6 +362,27 @@ Three layout bugs the render tests caught: an empty-state hint truncated by a fi
 (so a new user was told `no X account — degen`), `\n` inside a `Span` collapsing two lines into
 one, and a centred `Gauge` label that would not line up — now a left-labelled `LineGauge`.
 
+**X the other way round: OAuth 1.0a. DONE.** Two hours of token life, refreshed under a lock,
+is machinery whose only job is to spare you a second browser trip — and for the account that
+owns the app, X will just hand over four strings that never expire. So it does both, and prefers
+the simple one: with `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN` and `X_ACCESS_TOKEN_SECRET`
+set, every request is signed with HMAC-SHA1 per RFC 5849 and there is no browser, no refresh, no
+rotation and nothing to strand. Without them it falls back to the connected account. Keys win;
+`status` says which is in use.
+
+This needed a seam core did not have. A credential in a header can be written `$NAME` in a
+package file; an OAuth 1.0a credential is an HMAC over the request and does not exist until the
+request does. `degen-tools-core` 0.1.2 adds `RequestSigner`, run after the request is built,
+returning any secret it put on the wire so the runner masks an echo. The x tools now declare no
+`Authorization` at all, which also means the OAuth 2.0 bearer stopped being a fake "credential"
+resolved out of the store.
+
+*Verified:* 63 tests. The algorithm is pinned by the RFC's own worked example and by the
+property that matters — method, URL, query, timestamp and nonce each change the signature, and
+nothing else does. On the wire: four keys produce `OAuth oauth_signature=…` with no bearer token
+and neither secret present, a connected account produces `Bearer …`, keys win when both are set,
+having neither names both ways in, and two identical posts are signed differently.
+
 Explicitly **not** in the plan: any deploy, any always-on host, scheduled posts, `accounts
 export/import`, a second machine. degen-portal runs when you run it. Close the laptop and it
 stops posting — that is the intended behaviour, and it deletes a daemon, a hosting bill, a

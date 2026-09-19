@@ -14,6 +14,7 @@ pub mod policy;
 pub mod queue;
 pub mod secrets;
 pub mod status;
+pub mod xauth;
 pub mod tui;
 pub mod upload;
 
@@ -43,6 +44,8 @@ pub fn init() {
         overview: include_str!("skill.md"),
         // X's chunked upload is four calls with a session held between them.
         natives: &[upload::TOOL],
+        // X signs its own requests; see xauth.
+        signer: &xauth::XSigner,
     });
 }
 

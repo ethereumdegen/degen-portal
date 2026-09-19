@@ -4,7 +4,6 @@
   "method": "DELETE",
   "url": "https://api.x.com/2/tweets/{id}",
   "headers": {
-    "Authorization": "Bearer $X_ACCESS_TOKEN",
     "Accept": "application/json",
     "Content-Type": "application/json"
   },

@@ -40,7 +40,26 @@ only you can add it anywhere.
 A channel webhook works too, with no bot at all: store the URL as
 `DISCORD_WEBHOOK_URL` and use `discord_send_webhook`.
 
-### X (one browser trip)
+### X — four keys, no browser (recommended)
+
+The developer portal hands the app owner four strings on the Keys and Tokens
+page. They never expire.
+
+```bash
+degen-portal auth set X_API_KEY               # "API Key"
+degen-portal auth set X_API_SECRET            # "API Key Secret"
+degen-portal auth set X_ACCESS_TOKEN          # "Access Token"
+degen-portal auth set X_ACCESS_TOKEN_SECRET   # "Access Token Secret"
+```
+
+That is the whole setup. Each request is signed with OAuth 1.0a — an HMAC over
+the method, URL and parameters — so the secrets never go on the wire, nothing
+expires, nothing refreshes, and it works on a box with no display.
+
+It authenticates **the account that owns the app**, which for a personal tool
+is the point.
+
+### X — the browser flow (for an account whose app you don't own)
 
 ```bash
 # https://developer.x.com -> an app with OAuth 2.0, type "Native App"
@@ -49,9 +68,14 @@ degen-portal auth set X_CLIENT_ID <client id>  # a public client needs no secret
 degen-portal connect x                         # opens a browser once
 ```
 
-PKCE, so the `code_verifier` never leaves this machine. The access token lasts
-two hours and is refreshed automatically, under a lock file, because X rotates
-refresh tokens and two processes racing that rotation would strand the account.
+PKCE, so the `code_verifier` never leaves this machine. You log in once: the
+access token lasts two hours and is refreshed automatically, under a lock file,
+because X rotates refresh tokens and two processes racing that rotation would
+strand the account.
+
+Keys win when both are configured. `degen-portal status` says which is in use.
+The v2 media endpoints want OAuth 2.0 (`media.write`), so image and video
+upload may need the connected account even when keys are set.
 
 If `/2/*` calls return `client-forbidden` after auth worked, move the app to the
 **Pay-per-use** package and **Production** environment in X's console.

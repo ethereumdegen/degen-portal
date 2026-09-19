@@ -4,7 +4,6 @@
   "method": "GET",
   "url": "https://api.x.com/2/users/{id}/mentions?max_results={max_results}&since_id={since_id}&tweet.fields=created_at,conversation_id&expansions=author_id&user.fields=username",
   "headers": {
-    "Authorization": "Bearer $X_ACCESS_TOKEN",
     "Accept": "application/json",
     "Content-Type": "application/json"
   },

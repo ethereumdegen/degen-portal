@@ -16,8 +16,6 @@ use degen_tools_core::config::{CallContext, load_credentials, lookup_credential}
 use degen_tools_core::errors::DegenError;
 use serde_json::{Map, Value, json};
 
-use crate::credentials::X_ACCESS_TOKEN;
-
 const API: &str = "https://api.x.com/2/media/upload";
 
 /// X's own guidance: keep segments at or below 5 MB. 4 MB leaves headroom.
@@ -53,13 +51,8 @@ fn run(args: &Map<String, Value>, ctx: &CallContext<'_>) -> Result<Value, DegenE
     }
     let media_type = media_type_for(path)?;
 
-    // One token for the whole session: a refresh mid-upload would be fine, but
-    // the session is short and re-resolving per chunk would hammer the store.
-    let token = degen_tools_core::app()
-        .credentials
-        .resolve(X_ACCESS_TOKEN, ctx)?
-        .ok_or_else(|| DegenError::CredentialNotFound(X_ACCESS_TOKEN.to_string()))?;
     let base = base_url();
+    let account = ctx.account;
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(300))
         .user_agent(degen_tools_core::app().user_agent)
@@ -69,7 +62,7 @@ fn run(args: &Map<String, Value>, ctx: &CallContext<'_>) -> Result<Value, DegenE
     // 1. INIT
     let init = post_json(
         &client,
-        &token,
+        account,
         &format!("{base}/initialize"),
         &json!({ "media_type": media_type, "total_bytes": bytes.len(), "media_category": category }),
     )?;
@@ -85,9 +78,11 @@ fn run(args: &Map<String, Value>, ctx: &CallContext<'_>) -> Result<Value, DegenE
             .mime_str("application/octet-stream")
             .map_err(|e| DegenError::Http(format!("chunk {index}: {e}")))?;
         let form = reqwest::blocking::multipart::Form::new().text("segment_index", index.to_string()).part("media", part);
+        let url = format!("{base}/{media_id}/append");
+        let (authorization, _) = crate::xauth::authorize("POST", &url, account)?;
         let response = client
-            .post(format!("{base}/{media_id}/append"))
-            .bearer_auth(&token)
+            .post(&url)
+            .header(reqwest::header::AUTHORIZATION, authorization)
             .multipart(form)
             .send()
             .map_err(|e| DegenError::Http(format!("uploading chunk {index} failed: {}", e.without_url())))?;
@@ -102,7 +97,7 @@ fn run(args: &Map<String, Value>, ctx: &CallContext<'_>) -> Result<Value, DegenE
     }
 
     // 3. FINALIZE
-    let finalized = post_json(&client, &token, &format!("{base}/{media_id}/finalize"), &Value::Null)?;
+    let finalized = post_json(&client, account, &format!("{base}/{media_id}/finalize"), &Value::Null)?;
 
     // 4. STATUS, only when the server says it is still working.
     let state = finalized["data"]["processing_info"]["state"].as_str().unwrap_or("succeeded").to_string();
@@ -110,7 +105,7 @@ fn run(args: &Map<String, Value>, ctx: &CallContext<'_>) -> Result<Value, DegenE
         "succeeded" | "" => state,
         _ => {
             let wait = finalized["data"]["processing_info"]["check_after_secs"].as_u64().unwrap_or(1);
-            poll_until_done(&client, &token, &base, &media_id, wait)?
+            poll_until_done(&client, account, &base, &media_id, wait)?
         }
     };
 
@@ -124,7 +119,7 @@ fn run(args: &Map<String, Value>, ctx: &CallContext<'_>) -> Result<Value, DegenE
 /// for. A `failed` state is an error: the media id would be useless.
 fn poll_until_done(
     client: &reqwest::blocking::Client,
-    token: &str,
+    account: Option<&str>,
     base: &str,
     media_id: &str,
     first_wait: u64,
@@ -133,9 +128,11 @@ fn poll_until_done(
     let mut wait = first_wait.clamp(1, 30);
     loop {
         std::thread::sleep(Duration::from_secs(wait));
+        let url = format!("{base}?command=STATUS&media_id={media_id}");
+        let (authorization, _) = crate::xauth::authorize("GET", &url, account)?;
         let response = client
-            .get(format!("{base}?command=STATUS&media_id={media_id}"))
-            .bearer_auth(token)
+            .get(&url)
+            .header(reqwest::header::AUTHORIZATION, authorization)
             .send()
             .map_err(|e| DegenError::Http(format!("checking upload status failed: {}", e.without_url())))?;
         let body: Value = serde_json::from_str(&response.text().unwrap_or_default())
@@ -160,8 +157,9 @@ fn poll_until_done(
     }
 }
 
-fn post_json(client: &reqwest::blocking::Client, token: &str, url: &str, body: &Value) -> Result<Value, DegenError> {
-    let mut request = client.post(url).bearer_auth(token);
+fn post_json(client: &reqwest::blocking::Client, account: Option<&str>, url: &str, body: &Value) -> Result<Value, DegenError> {
+    let (authorization, _) = crate::xauth::authorize("POST", url, account)?;
+    let mut request = client.post(url).header(reqwest::header::AUTHORIZATION, authorization);
     if !body.is_null() {
         request = request.json(body);
     }
