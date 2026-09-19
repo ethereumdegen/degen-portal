@@ -97,6 +97,9 @@ pub enum Commands {
         action: DiscordAction,
     },
 
+    /// Serve the tools over the Model Context Protocol on stdin/stdout
+    Mcp,
+
     /// What has been published from this machine, newest last
     Log {
         /// How many entries

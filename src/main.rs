@@ -5,7 +5,7 @@ use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
 use degen_core::config::{load_credentials, lookup_credential};
 use degen_core::errors::DegenError;
 use degen_core::{auth, package, project, run, server, skill};
-use degen_portal::{DEFAULT_PORT, connect, init, ledger, oauth, policy, queue};
+use degen_portal::{DEFAULT_PORT, connect, init, ledger, mcp, oauth, policy, queue};
 
 /// View Channel, Send Messages, Read Message History, Add Reactions,
 /// Embed Links, Attach Files, Create Public Threads.
@@ -35,6 +35,7 @@ fn run() -> Result<(), DegenError> {
         }
         Commands::Skill { name } => skill::show(name.as_deref())?,
         Commands::Discord { action } => discord(action)?,
+        Commands::Mcp => mcp::serve()?,
         Commands::Log { limit } => log(limit)?,
         Commands::Undo { post_id } => undo(post_id.as_deref())?,
         Commands::Queue => queue::list()?,

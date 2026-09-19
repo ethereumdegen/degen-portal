@@ -8,6 +8,7 @@
 pub mod connect;
 pub mod credentials;
 pub mod ledger;
+pub mod mcp;
 pub mod oauth;
 pub mod policy;
 pub mod queue;

@@ -6,7 +6,7 @@ rust-version = "1.91"
 description = "degen-tools for social: Discord and X as HTTP tools an agent can call, with the accounts, allowlists and audit trail that posting in public needs"
 license = "MIT"
 publish = false
-readme = "PLAN.md"
+readme = "README.md"
 
 [lib]
 name = "degen_portal"

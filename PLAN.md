@@ -306,8 +306,27 @@ implementation registered beside the JSON ones and dispatched by `run` and `/v1/
 real change to what a tool *is*, so it is a decision to take deliberately rather than smuggle in
 under "media". Images cover posting charts, screenshots and art, which is the actual use.
 
-**P5 — Optional, only if wanted.** Discord gateway listener (outbound WS) so agents can *react*
-rather than only post, and an MCP stdio adapter. Both run in the same local daemon.
+**P5 — MCP. DONE. Gateway listener: not built.** `degen-portal mcp` speaks JSON-RPC 2.0 on
+stdin/stdout: `initialize` (echoing back any protocol revision from 2024-11-05 to 2026-07-28,
+else the newest), `ping`, `tools/list`, `tools/call`. Every package tool is exposed with its own
+schema, plus `portal_status`, which answers "what may I do right now" — accounts and expiry,
+writable channels, budget left, whether calls are being held. X tools gain an optional `account`
+argument. The overview from `skill` is sent as `instructions`, frontmatter stripped, so the
+"never repeat a failed write" rule reaches the model before its first call.
+
+Crucially this is a second face, not a second path: a `tools/call` goes through `run::execute`,
+so the allowlist, the repeat window, the budgets and the queue all still apply. *Verified:* 48
+tests. Two drive the real spawned binary over pipes — handshake, `tools/list`, a post, and the
+identical second post coming back with `isError` while the mock API records exactly one request.
+
+Two bugs the tests found: `instructions` was shipping the YAML frontmatter, and a bad argument
+or unknown tool escaped as a JSON-RPC error, which most clients hide from the model. Both now
+come back as tool content the model can read and act on.
+
+**The Discord gateway listener is not written.** It is an outbound WebSocket with heartbeats,
+resume and intents — a long-running process, where everything else here is a one-shot command.
+Reading works today by polling `discord_get_messages --after`. Worth doing only if an agent
+genuinely needs to react within seconds.
 
 Explicitly **not** in the plan: any deploy, any always-on host, scheduled posts, `accounts
 export/import`, a second machine. degen-portal runs when you run it. Close the laptop and it
