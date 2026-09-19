@@ -353,6 +353,20 @@ prompt, which is right for a tool you installed and wrong for one you are rebuil
 a round trip through an in-memory `SecretStore` — with it on, neither token appears in the file
 and both come back whole on load; with it off, the file is the store as before.
 
+**The dashboard. DONE.** `serve` shows it unless `--headless`: accounts with token expiry,
+budget gauges per provider and window, the approval queue with the *text of what would be said*,
+what has been published, and the live request log. `a` approves the selected call, `d` drops it,
+`u` deletes the most recent post behind a confirmation, `t` unmasks the API token. Approving and
+deleting run on a thread so the dashboard keeps drawing while a post is in flight. It reads
+accounts with `load_metadata`, never the tokens — with the keychain on, a one-second refresh loop
+that fetched secrets would be a permission prompt every second. *Verified:* four render tests
+against a `TestBackend`, plus the real binary in a terminal: it drew, logged a live `/health`
+call, and `q` exited 0.
+
+Three layout bugs the render tests caught: an empty-state hint truncated by a fixed table column
+(so a new user was told `no X account — degen`), `\n` inside a `Span` collapsing two lines into
+one, and a centred `Gauge` label that would not line up — now a left-labelled `LineGauge`.
+
 Explicitly **not** in the plan: any deploy, any always-on host, scheduled posts, `accounts
 export/import`, a second machine. degen-portal runs when you run it. Close the laptop and it
 stops posting — that is the intended behaviour, and it deletes a daemon, a hosting bill, a

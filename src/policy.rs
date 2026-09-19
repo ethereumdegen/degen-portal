@@ -136,7 +136,7 @@ pub fn target_of(provider: &str, args: &Map<String, Value>, ctx: &CallContext<'_
     if provider == "discord" {
         return args.get("channel_id").and_then(Value::as_str).unwrap_or("webhook").to_string();
     }
-    oauth::load()
+    oauth::load_metadata()
         .ok()
         .and_then(|accounts| oauth::select(&accounts, provider, ctx.account).ok())
         .map(|a| a.id())

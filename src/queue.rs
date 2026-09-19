@@ -107,8 +107,19 @@ pub fn list() -> Result<(), DegenError> {
     Ok(())
 }
 
-/// Run a held call for real.
+/// Run a held call for real, and print what came back.
 pub fn approve(id: &str) -> Result<(), DegenError> {
+    let outcome = approve_quietly(id)?;
+    println!("{}", serde_json::to_string_pretty(&outcome.response)?);
+    match outcome.error {
+        Some(error) => Err(DegenError::Http(error)),
+        None => Ok(()),
+    }
+}
+
+/// The same, returning the outcome instead of printing it: the dashboard has
+/// its own place to put the answer.
+pub fn approve_quietly(id: &str) -> Result<degen_tools_core::run::Outcome, DegenError> {
     let held = take(id)?;
     let (pkg, tool) = degen_tools_core::package::find_tool(&held.tool)?;
     let opts = degen_tools_core::run::RunOptions { account: held.account.clone(), ..Default::default() };
@@ -117,18 +128,13 @@ pub fn approve(id: &str) -> Result<(), DegenError> {
     let outcome = degen_tools_core::run::execute(&pkg, &tool, held.args.clone(), &opts);
     APPROVING.store(false, Ordering::SeqCst);
 
-    let outcome = outcome.inspect_err(|_| {
+    outcome.inspect_err(|_| {
         // The call never happened, so put it back rather than losing the text.
         if let Ok(mut queue) = load() {
             queue.held.push(held.clone());
             let _ = save(&queue);
         }
-    })?;
-    println!("{}", serde_json::to_string_pretty(&outcome.response)?);
-    match outcome.error {
-        Some(error) => Err(DegenError::Http(error)),
-        None => Ok(()),
-    }
+    })
 }
 
 pub fn drop_held(id: &str) -> Result<(), DegenError> {

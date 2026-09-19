@@ -5,7 +5,7 @@ use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
 use degen_tools_core::config::{load_credentials, lookup_credential};
 use degen_tools_core::errors::DegenError;
 use degen_tools_core::{auth, package, project, run, server, skill};
-use degen_portal::{DEFAULT_PORT, connect, gateway, init, ledger, mcp, oauth, policy, queue};
+use degen_portal::{DEFAULT_PORT, connect, gateway, init, ledger, mcp, oauth, policy, queue, tui};
 
 /// View Channel, Send Messages, Read Message History, Add Reactions,
 /// Embed Links, Attach Files, Create Public Threads.
@@ -14,11 +14,11 @@ const BOT_PERMISSIONS: u64 = 1024 | 2048 | 65536 | 64 | 16384 | 32768 | 34359738
 fn run() -> Result<(), DegenError> {
     let cli = Cli::parse();
     let Some(command) = cli.command else {
-        return serve(DEFAULT_PORT);
+        return serve(DEFAULT_PORT, !std::io::IsTerminal::is_terminal(&std::io::stdout()));
     };
 
     match command {
-        Commands::Serve { port } => serve(port)?,
+        Commands::Serve { port, headless } => serve(port, headless)?,
         Commands::Connect { provider, headless } => match provider {
             Some(provider) => connect::run(&provider, headless)?,
             None => server::connect()?,
@@ -39,7 +39,7 @@ fn run() -> Result<(), DegenError> {
         Commands::Mcp => mcp::serve()?,
         Commands::Listen { channels, include_bots } => gateway::listen(channels, include_bots)?,
         Commands::Log { limit } => log(limit)?,
-        Commands::Undo { post_id } => undo(post_id.as_deref())?,
+        Commands::Undo { post_id } => degen_portal::undo_post(post_id.as_deref())?,
         Commands::Queue => queue::list()?,
         Commands::Approve { id } => queue::approve(&id)?,
         Commands::Drop { id } => queue::drop_held(&id)?,
@@ -141,34 +141,6 @@ fn ago(at: u64) -> String {
     }
 }
 
-/// `degen-portal undo` — delete the most recent post, or a named one.
-fn undo(post_id: Option<&str>) -> Result<(), DegenError> {
-    let entries = ledger::read();
-    let entry = entries
-        .iter()
-        .rev()
-        .filter(|e| e.ok && e.undo.is_some())
-        .find(|e| post_id.is_none_or(|id| e.post_id.as_deref() == Some(id)))
-        .ok_or_else(|| {
-            DegenError::InvalidArgs(match post_id {
-                Some(id) => format!("nothing published as '{id}' can be undone from the ledger. `degen-portal log` lists what can."),
-                None => "nothing published from this machine can be undone.".to_string(),
-            })
-        })?;
-    let undo = entry.undo.clone().expect("filtered on Some");
-
-    let (pkg, tool) = package::find_tool(&undo.tool)?;
-    let opts = run::RunOptions { account: Some(entry.target.clone()).filter(|t| t.contains(':')), ..Default::default() };
-    let outcome = run::execute(&pkg, &tool, undo.args, &opts)?;
-    match outcome.error {
-        Some(error) => Err(DegenError::Http(error)),
-        None => {
-            println!("deleted {} ({})", entry.post_id.as_deref().unwrap_or("it"), entry.tool);
-            Ok(())
-        }
-    }
-}
-
 fn budget(provider: &str, per_hour: Option<usize>, per_day: Option<usize>) -> Result<(), DegenError> {
     let current = policy::load()?.budget(provider);
     if per_hour.is_none() && per_day.is_none() {
@@ -216,7 +188,7 @@ fn list() -> Result<(), DegenError> {
         println!("  {:<12} {:<9} {:<10} {:<6} {}", pkg.id(), pkg.integration.version, source, tools, keys);
     }
 
-    let accounts = oauth::load()?;
+    let accounts = oauth::load_metadata()?;
     println!();
     println!(
         "  Connected accounts: {}",
@@ -251,9 +223,8 @@ fn list() -> Result<(), DegenError> {
     Ok(())
 }
 
-/// The local API. Log lines go to stdout; the dashboard lands with the
-/// approval queue it exists to show.
-fn serve(port: u16) -> Result<(), DegenError> {
+/// The local API, with the dashboard unless asked for plain log lines.
+fn serve(port: u16, headless: bool) -> Result<(), DegenError> {
     let token = server::new_token()?;
     let (tx, rx) = std::sync::mpsc::channel();
     let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
@@ -268,6 +239,13 @@ fn serve(port: u16) -> Result<(), DegenError> {
         started_at: server::unix_now(),
     };
     let record = server::register(&conn, addr.port())?;
+
+    if !headless {
+        let result = tui::run(conn, rx);
+        let _ = std::fs::remove_file(record);
+        runtime.shutdown_background();
+        return result;
+    }
 
     println!("degen-portal {} listening on {}", env!("CARGO_PKG_VERSION"), conn.url);
     println!("credentials from: {}", conn.project_env.as_deref().unwrap_or("the global store (no .env here)"));

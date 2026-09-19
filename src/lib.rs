@@ -14,6 +14,7 @@ pub mod oauth;
 pub mod policy;
 pub mod queue;
 pub mod secrets;
+pub mod tui;
 pub mod upload;
 
 use degen_tools_core::App;
@@ -43,4 +44,33 @@ pub fn init() {
         // X's chunked upload is four calls with a session held between them.
         natives: &[upload::TOOL],
     });
+}
+
+/// `degen-portal undo`, and the dashboard's `u`: delete the most recent
+/// published post, or a named one, using the undo the ledger recorded.
+pub fn undo_post(post_id: Option<&str>) -> Result<(), degen_tools_core::errors::DegenError> {
+    let entries = ledger::read();
+    let entry = entries
+        .iter()
+        .rev()
+        .filter(|e| e.ok && e.undo.is_some())
+        .find(|e| post_id.is_none_or(|id| e.post_id.as_deref() == Some(id)))
+        .ok_or_else(|| {
+            degen_tools_core::errors::DegenError::InvalidArgs(match post_id {
+                Some(id) => format!("nothing published as '{id}' can be undone from the ledger. `degen-portal log` lists what can."),
+                None => "nothing published from this machine can be undone.".to_string(),
+            })
+        })?;
+    let undo = entry.undo.clone().expect("filtered on Some");
+
+    let (pkg, tool) = degen_tools_core::package::find_tool(&undo.tool)?;
+    let opts = degen_tools_core::run::RunOptions { account: Some(entry.target.clone()).filter(|t| t.contains(':')), ..Default::default() };
+    let outcome = degen_tools_core::run::execute(&pkg, &tool, undo.args, &opts)?;
+    match outcome.error {
+        Some(error) => Err(degen_tools_core::errors::DegenError::Http(error)),
+        None => {
+            println!("deleted {} ({})", entry.post_id.as_deref().unwrap_or("it"), entry.tool);
+            Ok(())
+        }
+    }
 }

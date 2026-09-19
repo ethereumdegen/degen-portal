@@ -170,7 +170,7 @@ fn whoami(access_token: &str) -> Result<(String, String), DegenError> {
 
 /// `degen-portal accounts`.
 pub fn list() -> Result<(), DegenError> {
-    let accounts = oauth::load()?;
+    let accounts = oauth::load_metadata()?;
     if accounts.accounts.is_empty() {
         println!("No account is connected. Connect one with `degen-portal connect x`.");
         return Ok(());

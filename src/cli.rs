@@ -25,6 +25,10 @@ pub enum Commands {
         /// Port to listen on; 0 picks a free one
         #[arg(long, default_value_t = degen_portal::DEFAULT_PORT)]
         port: u16,
+
+        /// Print log lines instead of showing the dashboard
+        #[arg(long)]
+        headless: bool,
     },
 
     /// With no argument: print the URL and token of the running server (for agents:

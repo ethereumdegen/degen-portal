@@ -56,6 +56,31 @@ refresh tokens and two processes racing that rotation would strand the account.
 If `/2/*` calls return `client-forbidden` after auth worked, move the app to the
 **Pay-per-use** package and **Production** environment in X's console.
 
+## The dashboard
+
+`degen-portal` with no arguments starts the local API and a dashboard over it:
+who it can post as and when each token expires, how much of each budget is
+left, what is waiting for approval, what has already gone out, and every
+request as it happens.
+
+```
+╭ accounts · 1 · keychain ───────────────────╮╭ budget ──────────────────────╮
+│ ★ x:degenspartan   expires in 47m          ││x ⏸    1/10   this hour  ─────│
+│   discord bot   token set                  ││       2/20   this day   ─────│
+│   channels      1180000000000000000        ││discord 1/30  this hour  ─────│
+╰────────────────────────────────────────────╯╰──────────────────────────────╯
+╭ waiting for you · 2 ───────────────────────╮╭ published ───────────────────╮
+│▸ q1   x_post   gm degens                   ││5m ago   x·post  @degenspartan│
+│  q2   x_post   shipping degen-portal today ││60s ago  d·send  #…000000     │
+╰────────────────────────────────────────────╯╰──────────────────────────────╯
+ a approve   d drop   ↑↓ pick   u undo last   t token   r reload   q quit
+```
+
+The approval queue is the reason it exists: read what the agent wants to say,
+press `a`, watch it post. `u` deletes the most recent post and asks first,
+because that one is public. `--headless` prints log lines instead, for running
+it under a supervisor.
+
 ## What refuses you, and why
 
 Every gate refuses *before* anything is sent, so a refusal means nothing
@@ -131,7 +156,7 @@ the metalcraft integration format, so a package runs here and in the agent.
 
 | Command | |
 |---|---|
-| `degen-portal` / `serve` | Local API on 127.0.0.1:7719 |
+| `degen-portal` / `serve` | Dashboard + local API on 127.0.0.1:7719 (`--headless` for log lines) |
 | `connect` | Print `DEGEN_PORTAL_URL` / `DEGEN_PORTAL_TOKEN` for agents |
 | `connect x [--headless]` | Connect an X account over OAuth |
 | `accounts` / `accounts default` / `accounts revoke` | Connected accounts and token expiry |

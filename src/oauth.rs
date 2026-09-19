@@ -125,12 +125,20 @@ pub fn load() -> Result<Accounts, DegenError> {
     load_with(&crate::secrets::Keychain)
 }
 
-pub fn load_with(store: &dyn crate::secrets::SecretStore) -> Result<Accounts, DegenError> {
+/// The accounts without their tokens: who is connected, their scopes and when
+/// each expires. Anything that only lists or displays reads this — with the
+/// keychain on, fetching the secrets would put a permission prompt behind a
+/// dashboard that refreshes every second.
+pub fn load_metadata() -> Result<Accounts, DegenError> {
     let path = accounts_path()?;
     if !path.is_file() {
         return Ok(Accounts::default());
     }
-    let mut accounts: Accounts = serde_json::from_str(&fs::read_to_string(&path)?)?;
+    Ok(serde_json::from_str(&fs::read_to_string(&path)?)?)
+}
+
+pub fn load_with(store: &dyn crate::secrets::SecretStore) -> Result<Accounts, DegenError> {
+    let mut accounts = load_metadata()?;
     if accounts.keychain {
         for (id, account) in accounts.accounts.iter_mut() {
             account.access_token = store.get(&crate::secrets::access_key(id))?.unwrap_or_default();

@@ -173,7 +173,7 @@ fn text_result(text: &str, is_error: bool) -> Value {
 
 /// A plain-language answer to "can I post right now?".
 fn status() -> Result<String, DegenError> {
-    let accounts = crate::oauth::load()?;
+    let accounts = crate::oauth::load_metadata()?;
     let policy = crate::policy::load()?;
     let entries = crate::ledger::read();
     let now = crate::oauth::now();
