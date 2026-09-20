@@ -1,0 +1,16 @@
+{
+  "id": "instagram",
+  "name": "Instagram",
+  "description": "Publish and read on Instagram through the Instagram API with Instagram Login (graph.instagram.com/v25.0). An Instagram professional account \u2014 business or creator \u2014 connected once with `degen-portal connect instagram`; no Facebook Page and no Page token involved. Publish images, reels, stories and carousels from public HTTPS URLs, read the account's own media, read conversations, and send direct messages \u2014 only to people who messaged the account first, and only to recipients a human allowed on this machine. The access token is minted and refreshed per call and never printed. Instagram has no delete endpoint: a published post cannot be taken back from here.",
+  "version": "0.1.0",
+  "requires_env": [
+    "INSTAGRAM_ACCESS_TOKEN"
+  ],
+  "tags": [
+    "instagram",
+    "social",
+    "posting",
+    "messaging",
+    "dm"
+  ]
+}

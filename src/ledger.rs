@@ -141,6 +141,12 @@ pub fn permalink(provider: &str, handle: Option<&str>, args: &Map<String, Value>
             .get("channel_id")
             .and_then(Value::as_str)
             .map(|channel| format!("discord: channel {channel}, message {post_id}")),
+        // Instagram's media id is not its shortcode, so there is no URL to
+        // build: `instagram_get_media` trades the id for the real permalink.
+        "instagram" => Some(match args.get("recipient_id").and_then(Value::as_str) {
+            Some(recipient) => format!("instagram: dm to {recipient}, message {post_id}"),
+            None => format!("instagram: media {post_id}"),
+        }),
         _ => None,
     }
 }
@@ -159,6 +165,10 @@ pub fn undo_for(provider: &str, args: &Map<String, Value>, post_id: &str) -> Opt
             undo_args.insert("message_id".into(), Value::String(post_id.to_string()));
             Some(Undo { tool: "discord_delete_message".into(), args: undo_args })
         }
+        // Instagram has no delete: not for media, not for a sent message.
+        // Recording an undo that cannot run would make `log` lie about what
+        // can be taken back. A published post comes down by hand, in the app.
+        "instagram" => None,
         // A webhook message can be edited or deleted only through the webhook
         // URL it came from, which is a credential, not an argument here.
         _ => None,

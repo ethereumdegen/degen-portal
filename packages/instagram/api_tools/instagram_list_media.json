@@ -1,0 +1,25 @@
+{
+  "name": "instagram_list_media",
+  "description": "What the account has already posted, newest first. Returns { data: [{ id, caption, media_type, media_product_type, permalink, timestamp, like_count, comments_count }], paging }. Page with --after, using `paging.cursors.after` from the previous call. Read this before publishing if there is any chance the account already said it.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/me/media?fields=id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count&limit={limit}&after={after}",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "How many posts, 1-100. Default 25."
+      },
+      "after": {
+        "type": "string",
+        "description": "The `paging.cursors.after` value from the previous page. Omit for the first page."
+      }
+    },
+    "required": []
+  },
+  "body_mapping": "none"
+}

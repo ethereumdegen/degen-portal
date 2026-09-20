@@ -1,0 +1,25 @@
+{
+  "name": "instagram_list_conversations",
+  "description": "Conversations in the account's Instagram inbox, most recently updated first: { data: [{ id, updated_time }], paging }. This is how you find who has written to the account, which matters because a DM may only be sent to someone who messaged first \u2014 a person with no conversation here cannot be messaged at all. Pass --user_id with an Instagram-scoped id to get just the one conversation with that person. Feed an id to instagram_get_conversation for its messages.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/me/conversations?platform=instagram&fields=id,updated_time&user_id={user_id}&limit={limit}",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string",
+        "description": "Instagram-scoped id (IGSID) of one person, to return only the conversation with them. Omit to list all of them."
+      },
+      "limit": {
+        "type": "integer",
+        "description": "How many conversations. Default 25."
+      }
+    },
+    "required": []
+  },
+  "body_mapping": "none"
+}

@@ -1,0 +1,65 @@
+{
+  "name": "instagram_create_media",
+  "description": "Stage a post without publishing it. Instagram fetches the media from the URL itself and returns { id } — a container id, not a post, and nothing is public yet; instagram_publish_media --creation_id is the call that publishes it. Pass either --image_url or --video_url, never both, which is why the schema requires neither. The URL must be a public HTTPS URL Instagram's servers can reach: a path on this machine cannot be used, and JPEG is the only image format that works. Video, reels and stories are processed asynchronously — poll instagram_media_status until status_code is FINISHED before publishing. A container expires after 24 hours. If this fails, read the error and stop; call it again only with the thing you actually changed.",
+  "method": "POST",
+  "url": "https://graph.instagram.com/v25.0/me/media",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "image_url": {
+        "type": "string",
+        "description": "Public HTTPS URL of a JPEG. Instagram downloads it from there, so a local path does not work and neither does PNG, HEIC or WEBP. Mutually exclusive with video_url."
+      },
+      "video_url": {
+        "type": "string",
+        "description": "Public HTTPS URL of an MP4 or MOV. Mutually exclusive with image_url; needs media_type REELS or STORIES."
+      },
+      "media_type": {
+        "type": "string",
+        "description": "'IMAGE' (the default, so it can be left off for a feed photo), 'REELS' for video, 'STORIES' for a 24-hour story, 'CAROUSEL' for a parent holding children.",
+        "enum": [
+          "IMAGE",
+          "REELS",
+          "STORIES",
+          "CAROUSEL"
+        ]
+      },
+      "caption": {
+        "type": "string",
+        "description": "Caption text, up to 2200 characters and 30 hashtags. Not used on stories or on a carousel child — the carousel parent carries it."
+      },
+      "children": {
+        "type": "string",
+        "description": "Comma-separated list of up to 10 container ids, each created with --is_carousel_item true, e.g. '17..1,17..2'. Only with media_type CAROUSEL."
+      },
+      "is_carousel_item": {
+        "type": "boolean",
+        "description": "Mark this container as a child of a carousel rather than a post of its own. A child is never published directly."
+      },
+      "alt_text": {
+        "type": "string",
+        "description": "Accessibility description, images only. Up to 1000 characters."
+      },
+      "thumb_offset": {
+        "type": "integer",
+        "description": "Which video frame to use as the cover, in milliseconds from the start."
+      },
+      "share_to_feed": {
+        "type": "boolean",
+        "description": "For REELS: also show the reel on the profile grid. Default true."
+      },
+      "is_ai_generated": {
+        "type": "boolean",
+        "description": "Set this when the media was generated rather than photographed. Instagram labels the post."
+      }
+    },
+    "required": []
+  },
+  "body_mapping": "params",
+  "timeout_secs": 120
+}

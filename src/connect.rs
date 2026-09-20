@@ -1,26 +1,39 @@
-//! `degen-portal connect x` — the one browser trip.
+//! `degen-portal connect <provider>` — the one browser trip.
 //!
 //! The listener is bound before the URL is printed, so a fast approval cannot
 //! arrive before anything is listening. X's authorization code expires 30
 //! seconds after approval, which is also why `--headless` warns about pasting
-//! promptly.
+//! promptly; Instagram's lasts an hour.
+//!
+//! Instagram usually cannot use the listener at all: Meta wants an HTTPS
+//! redirect URI registered in the app dashboard, and nothing here serves
+//! HTTPS. So unless the stored redirect points back at this machine, the code
+//! is pasted — the browser still lands on the URI carrying `?code=`, whether
+//! or not anything is there to answer.
 
 use std::time::Duration;
 
 use degen_tools_core::config::{load_credentials, lookup_credential};
 use degen_tools_core::errors::DegenError;
 
+use crate::instagram as ig;
 use crate::oauth::{self, Account};
 
-const PROVIDERS: &[&str] = &["x"];
+const PROVIDERS: &[&str] = &["x", "instagram"];
 
 pub fn run(provider: &str, headless: bool) -> Result<(), DegenError> {
-    if provider != "x" {
-        return Err(DegenError::InvalidArgs(format!(
-            "'{provider}' is not a provider that connects over OAuth (known: {}). Discord uses a bot token: `degen-portal auth set DISCORD_BOT_TOKEN`",
+    match provider {
+        "x" => x(headless),
+        "instagram" => instagram(headless),
+        other => Err(DegenError::InvalidArgs(format!(
+            "'{other}' is not a provider that connects over OAuth (known: {}). Discord uses a bot token: `degen-portal auth set DISCORD_BOT_TOKEN`",
             PROVIDERS.join(", ")
-        )));
+        ))),
     }
+}
+
+/// X: OAuth 2.0 with PKCE, a public client, and a two-hour token.
+fn x(headless: bool) -> Result<(), DegenError> {
     let creds = load_credentials()?;
     let client_id = lookup_credential(&creds, "X_CLIENT_ID").ok_or_else(|| {
         DegenError::InvalidArgs(
@@ -37,7 +50,11 @@ pub fn run(provider: &str, headless: bool) -> Result<(), DegenError> {
     let redirect_uri = oauth::redirect_uri();
     let url = oauth::authorize_url(&client_id, &redirect_uri, &state, &oauth::challenge_for(&verifier));
 
-    let code = if headless { paste_code(&url)? } else { browser_code(&url, &state)? };
+    let code = if headless {
+        paste_code(&url, "The code expires 30 seconds after you approve, so have this terminal ready.")?
+    } else {
+        browser_code("X", &url, &state)?
+    };
 
     let token = oauth::exchange_code(oauth::TOKEN_URL, &client_id, client_secret.as_deref(), &code, &verifier, &redirect_uri)?;
     let scopes = token.scope.clone().unwrap_or_else(|| oauth::SCOPES.to_string());
@@ -74,18 +91,89 @@ pub fn run(provider: &str, headless: bool) -> Result<(), DegenError> {
     Ok(())
 }
 
+/// Instagram: Business Login, an app secret instead of PKCE, and a token
+/// that is swapped for a sixty-day one before it is ever written down.
+fn instagram(headless: bool) -> Result<(), DegenError> {
+    let creds = load_credentials()?;
+    let (app_id, app_secret) = ig::app(&creds).ok_or_else(|| {
+        DegenError::InvalidArgs(format!(
+            "{} and {} must both be set. In the Meta App Dashboard, add the Instagram product, open\n  \
+             Instagram > API setup with Instagram login > Set up Instagram business login,\n\
+             and copy the Instagram App ID and App Secret from there (not the Facebook app's):\n  \
+             degen-portal auth set {}\n  degen-portal auth set {}\n\n\
+             Register the redirect URI you will use in the same panel, and store it if it is not\n\
+             this machine's own callback:\n  degen-portal auth set {} <https://...>",
+            ig::APP_ID,
+            ig::APP_SECRET,
+            ig::APP_ID,
+            ig::APP_SECRET,
+            ig::REDIRECT_URI
+        ))
+    })?;
+    let redirect_uri = ig::redirect_uri(&creds);
+
+    let state = oauth::new_verifier()?;
+    let url = ig::authorize_url(&app_id, &redirect_uri, &state);
+
+    // Meta requires HTTPS redirect URIs, and this serves none. When the
+    // registered URI is not this machine's own callback, the browser lands
+    // somewhere else — possibly on nothing at all — and the human brings the
+    // code back by hand.
+    let code = if headless || !ig::is_loopback(&redirect_uri) {
+        if !ig::is_loopback(&redirect_uri) {
+            println!("Instagram will send your browser to {redirect_uri} with ?code=... — that page does not have to load.");
+        }
+        paste_code(&url, "The code is good for an hour and can be used once. The trailing #_ is not part of it.")?
+    } else {
+        browser_code("Instagram", &url, &state)?
+    };
+
+    let (short_lived, _) = ig::exchange_code(ig::TOKEN_URL, &app_id, &app_secret, &code, &redirect_uri)?;
+    let (token, expires_in) = ig::long_lived(ig::EXCHANGE_URL, &app_secret, &short_lived)?;
+    let (user_id, handle) = ig::whoami(ig::ME_URL, &token)?;
+
+    let mut account = Account {
+        provider: "instagram".to_string(),
+        handle: handle.clone(),
+        user_id,
+        scopes: ig::SCOPES.to_string(),
+        access_token: String::new(),
+        expires_at: 0,
+        // Instagram has none: the access token refreshes itself.
+        refresh_token: None,
+        client_id: app_id,
+        connected_at: oauth::now(),
+    };
+    ig::apply(&mut account, token, expires_in);
+
+    let id = account.id();
+    let days = expires_in / 86_400;
+    let mut accounts = oauth::load()?;
+    let replaced = accounts.accounts.insert(id.clone(), account).is_some();
+    oauth::save(&accounts)?;
+
+    println!("{} @{handle} ({id}), good for {days} days and refreshed automatically", if replaced { "Reconnected" } else { "Connected" });
+    println!("Nobody may be DMed until you say so:\n  degen-portal instagram allow <instagram-scoped id>");
+    let others = accounts.accounts.values().filter(|a| a.provider == "instagram").count();
+    if others > 1 && !accounts.default.contains_key("instagram") {
+        println!("\n{others} Instagram accounts are connected and none is the default, so calls will ask which to use:");
+        println!("  degen-portal accounts default {id}");
+    }
+    Ok(())
+}
+
 /// Listen first, then send the human to the browser.
-fn browser_code(url: &str, state: &str) -> Result<String, DegenError> {
+fn browser_code(provider: &str, url: &str, state: &str) -> Result<String, DegenError> {
     let waiting = std::thread::spawn(|| oauth::wait_for_callback(oauth::CALLBACK_PORT, Duration::from_secs(300)));
     // Give the listener a moment to bind before anything can be approved.
     std::thread::sleep(Duration::from_millis(50));
 
-    println!("Opening X to approve access. If nothing opens, paste this into a browser:\n\n{url}\n");
+    println!("Opening {provider} to approve access. If nothing opens, paste this into a browser:\n\n{url}\n");
     open_browser(url);
 
     let callback = waiting.join().map_err(|_| DegenError::Http("the callback listener stopped".to_string()))??;
     if let Some(error) = callback.error {
-        return Err(DegenError::Http(format!("X refused the request: {error}")));
+        return Err(DegenError::Http(format!("{provider} refused the request: {error}")));
     }
     // The state is what ties this callback to the request made a moment ago.
     // A mismatch means the code came from somewhere else.
@@ -96,9 +184,9 @@ fn browser_code(url: &str, state: &str) -> Result<String, DegenError> {
     callback.code.ok_or_else(|| DegenError::Http("the callback carried no code".to_string()))
 }
 
-fn paste_code(url: &str) -> Result<String, DegenError> {
+fn paste_code(url: &str, expiry: &str) -> Result<String, DegenError> {
     println!("Open this on any device, approve, then paste the URL it lands on (or just the code):\n\n{url}\n");
-    println!("The code expires 30 seconds after you approve, so have this terminal ready.");
+    println!("{expiry}");
     print!("code or redirect URL: ");
     use std::io::Write;
     std::io::stdout().flush()?;

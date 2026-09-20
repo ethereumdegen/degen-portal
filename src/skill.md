@@ -1,7 +1,7 @@
 ---
 skill: degen-portal
 version: {version}
-description: Post and read on X and in Discord; X authenticates per account over OAuth with tokens refreshed automatically, and a human-held allowlist decides which Discord channels can be written to
+description: Post and read on X, in Discord and on Instagram; X and Instagram authenticate per account over OAuth with tokens refreshed automatically, and human-held allowlists decide which Discord channels can be written to and which Instagram users can be messaged
 ---
 
 # degen-portal
@@ -13,7 +13,8 @@ shown to you.
 
 **What makes this different from a normal API client: the calls are public and
 permanent.** A message you send can be read by everyone in the channel and stays
-there until it is deleted. Act accordingly:
+there until it is deleted — and an Instagram post cannot be deleted through the
+API at all, by you or by this tool. Act accordingly:
 
 - **Never repeat a failed write.** A 429, a timeout or a broken connection can
   mean the post landed anyway. Report the error; do not call the tool again.
@@ -35,6 +36,7 @@ degen-portal skill <tool>                     # one tool's parameters
 degen-portal run <tool> --param value ...     # call a tool
 degen-portal run --json '{...}' <tool>        # arguments as JSON (or --json @file.json)
 degen-portal discord channels                 # which channels may be written to
+degen-portal instagram recipients             # who may be sent a direct message
 ```
 
 ## What will refuse you, and why
@@ -42,8 +44,8 @@ degen-portal discord channels                 # which channels may be written to
 Four gates sit in front of every write. All of them refuse *before* anything is
 sent, so a refusal means nothing happened — it is not a partial post.
 
-1. **The channel allowlist** (Discord). Ask a human; do not look for a way
-   around it.
+1. **The channel allowlist** (Discord) and **the recipient allowlist**
+   (Instagram DMs). Ask a human; do not look for a way around it.
 2. **Repeats.** Publishing exactly the same thing twice inside 15 minutes is
    refused, and the refusal names the post you already made. This is what
    catches a retry after a timeout. **If you get it, you already succeeded.**
@@ -58,21 +60,27 @@ left. Read it before a burst of posts, not after.
 
 ## Accounts and the allowlist
 
-Two different gates, one per provider.
+Three gates, one per provider.
 
-**X** acts as a connected account. With one connected it is used; with several
-and no default, a call is refused rather than guessed — ask which handle. The
-access token is refreshed automatically and never shown to you. Add
-`--account x:handle` to pick one.
+**X and Instagram** act as a connected account. With one connected it is used;
+with several and no default, a call is refused rather than guessed — ask which
+handle. The access token is refreshed automatically and never shown to you. Add
+`--account x:handle` or `--account instagram:handle` to pick one.
 
 **Discord**: writing to a channel is refused unless a human has allowed that exact
 channel id on this machine. Reads are never refused, so you can list channels
 and read messages to work out which id to ask about.
 
+**Instagram**: a direct message is refused unless a human has allowed that exact
+Instagram-scoped id. Instagram itself also refuses anyone who has not messaged
+the account in the last 24 hours, so a DM is always a reply and never an
+opening. Reading the inbox is not permission to answer it.
+
 If a call is refused, the error names the command the human runs:
 
 ```
 degen-portal discord allow <channel id>
+degen-portal instagram allow <instagram-scoped id>
 ```
 
 Ask them to run it. There is no way around it from here, and looking for one is
@@ -102,12 +110,16 @@ and returns `{ok, status, error, response, duration_ms}`.
 
 ## Files
 
-Both providers take a local path: `x_upload_media --media ./hero.png` gives an
+**X and Discord take a local path**: `x_upload_media --media ./hero.png` gives an
 id for `x_post --media_ids`, and `discord_upload_attachment --file ./chart.png`
 sends the file and the message in one call. `x_upload_video --media ./clip.mp4`
 uploads a video in chunks and waits for X to transcode it, which can take
 minutes — call it once. Whatever path you name is read off this machine and
 published, so name only what the user asked to publish.
+
+**Instagram takes a public URL instead**, because Instagram's servers fetch the
+media themselves: there is no upload call, a local path cannot work, and images
+must be JPEG.
 
 ## Reading results
 

@@ -1,0 +1,23 @@
+{
+  "name": "instagram_media_status",
+  "description": "Whether a container from instagram_create_media is ready to publish: { status_code, status, id }. `status_code` is EXPIRED, ERROR, FINISHED, IN_PROGRESS or PUBLISHED, and only FINISHED may be passed to instagram_publish_media. Images are usually ready at once; video and reel containers are not, so poll this instead of retrying the publish blindly. A container expires 24 hours after it is created; ERROR or EXPIRED means make a new one, not try again.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/{container_id}?fields=status_code,status",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "container_id": {
+        "type": "string",
+        "description": "The `id` instagram_create_media returned. A container, not a published post."
+      }
+    },
+    "required": [
+      "container_id"
+    ]
+  },
+  "body_mapping": "none"
+}

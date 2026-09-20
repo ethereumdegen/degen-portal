@@ -35,7 +35,8 @@ const CYAN: Color = Color::Rgb(0x7d, 0xcf, 0xff);
 const INK: Color = Color::Rgb(0x1a, 0x1b, 0x26);
 
 const LOG_CAP: usize = 500;
-const PROVIDERS: [&str; 2] = ["x", "discord"];
+/// One source of truth with `status`, so a new provider shows up in both.
+const PROVIDERS: [&str; 3] = crate::status::PROVIDERS;
 
 /// What a background approve/drop came back with.
 struct Done {
@@ -363,6 +364,14 @@ fn draw_accounts(f: &mut Frame, area: Rect, dash: &Dashboard) {
             Span::styled(dash.policy.channels.iter().cloned().collect::<Vec<_>>().join(", "), Style::new().fg(GREEN))
         },
     ]));
+    lines.push(Line::from(vec![
+        Span::styled("   dm recipients ", Style::new().fg(BG_DIM)),
+        if dash.policy.recipients.is_empty() {
+            Span::styled("none      degen-portal instagram allow <igsid>", Style::new().fg(YELLOW))
+        } else {
+            Span::styled(dash.policy.recipients.iter().cloned().collect::<Vec<_>>().join(", "), Style::new().fg(GREEN))
+        },
+    ]));
 
     let title = format!(
         "accounts · {}{}",
@@ -377,7 +386,7 @@ fn draw_budgets(f: &mut Frame, area: Rect, dash: &Dashboard) {
     let body = inner.inner(area);
     f.render_widget(inner, area);
 
-    let rows = Layout::vertical([Constraint::Length(2), Constraint::Length(2), Constraint::Min(0)]).split(body);
+    let rows = Layout::vertical([Constraint::Length(2), Constraint::Length(2), Constraint::Length(2), Constraint::Min(0)]).split(body);
     for (i, provider) in PROVIDERS.iter().enumerate() {
         let [label, bars] = Layout::horizontal([Constraint::Length(9), Constraint::Min(10)]).areas(rows[i]);
         let held = dash.policy.approval(provider) == policy::Approval::Queue;
@@ -468,7 +477,7 @@ fn draw_published(f: &mut Frame, area: Rect, dash: &Dashboard) {
             // A truncated URL tells you nothing. The handle or channel plus
             // the id is what a human needs to find the thing; `log` has links.
             let where_ = match entry.provider.as_str() {
-                "x" => format!("@{}", entry.target.split_once(':').map(|(_, h)| h).unwrap_or(&entry.target)),
+                "x" | "instagram" => format!("@{}", entry.target.split_once(':').map(|(_, h)| h).unwrap_or(&entry.target)),
                 _ => format!("#{}", tail(&entry.target, 6)),
             };
             Row::new(vec![

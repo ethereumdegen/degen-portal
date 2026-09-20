@@ -1,0 +1,16 @@
+{
+  "name": "instagram_me",
+  "description": "Which account these calls act as: { user_id, username, name, account_type, profile_picture_url, followers_count, media_count }. The `user_id` is the account's Instagram id. Start here when you are unsure whose grid you are about to post to. `account_type` has to be BUSINESS or MEDIA_CREATOR \u2014 a personal account cannot publish or read messages, and nothing else here will work.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/me?fields=user_id,username,name,account_type,profile_picture_url,followers_count,media_count",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "body_mapping": "none"
+}

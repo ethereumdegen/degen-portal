@@ -1,0 +1,23 @@
+{
+  "name": "instagram_get_conversation",
+  "description": "The messages in one conversation: { messages: { data: [{ id, created_time }] }, id }. Ids and times only \u2014 the text, the sender and any attachment come from instagram_get_message, one call per message. Only the 20 most recent messages in a conversation can be read in detail; anything older is a dead id.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/{conversation_id}?fields=messages",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "conversation_id": {
+        "type": "string",
+        "description": "Conversation id from instagram_list_conversations."
+      }
+    },
+    "required": [
+      "conversation_id"
+    ]
+  },
+  "body_mapping": "none"
+}

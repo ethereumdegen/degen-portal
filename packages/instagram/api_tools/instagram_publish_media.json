@@ -1,0 +1,25 @@
+{
+  "name": "instagram_publish_media",
+  "description": "POSTS IN PUBLIC, NO UNDO: publish a container made by instagram_create_media. Returns { id } \u2014 the media id, which instagram_get_media turns into a permalink a human can open. The Instagram API has no delete endpoint: once this returns, the post cannot be taken back from here, `degen-portal undo` cannot take it back, and only a human deleting it in the Instagram app can. The container must be FINISHED \u2014 check instagram_media_status first for video, reels and stories, or this fails with the media not being ready. 100 published posts per 24 hours per account; a carousel counts as one. If this fails, read the error and stop: a timeout can mean the post landed, and calling again is how the same thing gets published twice with no way to remove either.",
+  "method": "POST",
+  "url": "https://graph.instagram.com/v25.0/me/media_publish",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "creation_id": {
+        "type": "string",
+        "description": "The container id instagram_create_media returned. For a carousel, the id of the CAROUSEL parent, not a child."
+      }
+    },
+    "required": [
+      "creation_id"
+    ]
+  },
+  "body_mapping": "params",
+  "post_id_path": "id"
+}

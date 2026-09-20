@@ -2,9 +2,11 @@
 //!
 //! Four gates, cheapest first, all in front of the same `check`:
 //!
-//! 1. **Where** — a Discord write needs the channel allowed by a human. An
-//!    agent that can list channels can find `#announcements`, and having the id
-//!    is not permission to post in it.
+//! 1. **Where** — a Discord write needs the channel allowed by a human, and
+//!    an Instagram DM needs the recipient allowed by a human. An agent that
+//!    can list channels can find `#announcements`, an agent that can read the
+//!    inbox has everyone's id, and having an id is not permission to write to
+//!    it.
 //! 2. **Again** — an identical publish inside 15 minutes is refused, naming the
 //!    post it would have duplicated. An agent that retries after a timeout is
 //!    behaving normally; publishing twice is not.
@@ -30,10 +32,14 @@ use serde_json::{Map, Value, json};
 use crate::{ledger, oauth, queue};
 
 /// Conservative on X because every post is billed; looser on Discord, which is
-/// a chat room and free.
+/// a chat room and free. Instagram sits between: a post there cannot be
+/// deleted through the API and a DM lands in someone's inbox, so the cap is
+/// low enough that a loop is noticed by a human before it is noticed by
+/// Meta.
 pub const DEFAULT_BUDGETS: &[(&str, Budget)] = &[
     ("x", Budget { per_hour: 10, per_day: 20 }),
     ("discord", Budget { per_hour: 30, per_day: 200 }),
+    ("instagram", Budget { per_hour: 10, per_day: 50 }),
 ];
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,6 +64,9 @@ pub struct Policy {
     /// Discord channel ids this machine may write to.
     #[serde(default)]
     pub channels: BTreeSet<String>,
+    /// Instagram-scoped ids (IGSIDs) this machine may send a DM to.
+    #[serde(default)]
+    pub recipients: BTreeSet<String>,
     /// Per-provider caps. Absent means the default.
     #[serde(default)]
     pub budgets: std::collections::BTreeMap<String, Budget>,
@@ -113,6 +122,22 @@ pub fn deny(channel_id: &str) -> Result<bool, DegenError> {
     Ok(removed)
 }
 
+/// Allow a DM recipient. Returns false when it was already allowed.
+pub fn allow_recipient(igsid: &str) -> Result<bool, DegenError> {
+    let mut policy = load()?;
+    let added = policy.recipients.insert(igsid.to_string());
+    save(&policy)?;
+    Ok(added)
+}
+
+/// Remove a DM recipient. Returns false when it was not allowed anyway.
+pub fn deny_recipient(igsid: &str) -> Result<bool, DegenError> {
+    let mut policy = load()?;
+    let removed = policy.recipients.remove(igsid);
+    save(&policy)?;
+    Ok(removed)
+}
+
 pub fn set_budget(provider: &str, budget: Budget) -> Result<(), DegenError> {
     let mut policy = load()?;
     policy.budgets.insert(provider.to_string(), budget);
@@ -155,6 +180,7 @@ impl CallPolicy for PortalPolicy {
         let target = target_of(&provider, args, ctx);
 
         refuse_unallowed_channel(tool, args, &policy.channels)?;
+        refuse_unallowed_recipient(tool, args, &policy.recipients)?;
 
         // Everything below is about publishing. An edit, a delete or a reaction
         // is a write, but it is not a new thing in the world.
@@ -261,6 +287,30 @@ fn refuse_unallowed_channel(tool: &ToolConfig, args: &Map<String, Value>, allowe
     )))
 }
 
+/// A DM needs its recipient allowed.
+///
+/// Instagram already refuses a message to anyone who has not written first,
+/// which is a rule about the *conversation*. This is a rule about *this
+/// machine*: reading the inbox hands an agent every id in it, and having
+/// someone's id is not permission to message them.
+fn refuse_unallowed_recipient(tool: &ToolConfig, args: &Map<String, Value>, allowed: &BTreeSet<String>) -> Result<(), DegenError> {
+    let Some(recipient) = args.get("recipient_id").and_then(Value::as_str).filter(|r| !r.is_empty()) else {
+        return Ok(());
+    };
+    if allowed.contains(recipient) {
+        return Ok(());
+    }
+    Err(DegenError::InvalidArgs(format!(
+        "{} refuses recipient {recipient}: they are not on this machine's allowlist. A human adds them with\n  degen-portal instagram allow {recipient}\n{}",
+        tool.name,
+        if allowed.is_empty() {
+            "Nobody is allowed yet.".to_string()
+        } else {
+            format!("Allowed: {}", allowed.iter().cloned().collect::<Vec<_>>().join(", "))
+        }
+    )))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -311,6 +361,7 @@ mod tests {
         let mut policy = Policy::default();
         assert_eq!(policy.budget("x"), Budget { per_hour: 10, per_day: 20 });
         assert_eq!(policy.budget("discord"), Budget { per_hour: 30, per_day: 200 });
+        assert_eq!(policy.budget("instagram"), Budget { per_hour: 10, per_day: 50 });
         policy.budgets.insert("x".into(), Budget { per_hour: 1, per_day: 2 });
         assert_eq!(policy.budget("x"), Budget { per_hour: 1, per_day: 2 });
     }

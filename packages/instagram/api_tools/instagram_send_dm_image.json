@@ -1,0 +1,41 @@
+{
+  "name": "instagram_send_dm_image",
+  "description": "SENDS A REAL MESSAGE TO A REAL PERSON: send an image as a direct message. Returns { recipient_id, message_id }. Instagram fetches the image from the URL, so it must be a public HTTPS URL \u2014 a path on this machine cannot be used \u2014 PNG or JPEG, 8 MB at most. The same rules as instagram_send_dm hold: only someone who messaged the account first, only inside the 24-hour window from their last message (outside it the API answers error code 10, subcode 2534022), and only a recipient a human allowed with `degen-portal instagram allow <igsid>`. It cannot be unsent through the API. If this fails, read the error and stop.",
+  "method": "POST",
+  "url": "https://graph.instagram.com/v25.0/me/messages",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json",
+    "Content-Type": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "recipient_id": {
+        "type": "string",
+        "description": "The Instagram-scoped id (IGSID) of the person, from instagram_get_message's `from.id` or instagram_list_conversations. Not a username."
+      },
+      "image_url": {
+        "type": "string",
+        "description": "Public HTTPS URL of a PNG or JPEG, 8 MB or less. Instagram downloads it, so a local path does not work."
+      }
+    },
+    "required": [
+      "recipient_id",
+      "image_url"
+    ]
+  },
+  "body_mapping": "params_nested",
+  "param_paths": {
+    "recipient_id": "recipient.id",
+    "image_url": "message.attachment.payload.url"
+  },
+  "body_defaults": {
+    "message": {
+      "attachment": {
+        "type": "image"
+      }
+    }
+  },
+  "post_id_path": "message_id"
+}

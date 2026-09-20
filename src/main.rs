@@ -1,7 +1,7 @@
 mod cli;
 
 use clap::Parser;
-use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction};
+use cli::{AccountAction, AuthAction, Cli, Commands, DiscordAction, InstagramAction};
 use degen_tools_core::config::{load_credentials, lookup_credential};
 use degen_tools_core::errors::DegenError;
 use degen_tools_core::{auth, package, project, run, server, skill};
@@ -36,6 +36,7 @@ fn run() -> Result<(), DegenError> {
         }
         Commands::Skill { name } => skill::show(name.as_deref())?,
         Commands::Discord { action } => discord(action)?,
+        Commands::Instagram { action } => instagram(action)?,
         Commands::Status => println!("{}", degen_portal::status::status()?),
         Commands::Listen { channels, include_bots } => gateway::listen(channels, include_bots)?,
         Commands::Log { limit } => log(limit)?,
@@ -106,6 +107,38 @@ fn discord(action: DiscordAction) -> Result<(), DegenError> {
     }
 }
 
+/// `degen-portal instagram …` — the DM allowlist, and nothing else: posting
+/// to your own feed needs no permission from anyone but Meta.
+fn instagram(action: InstagramAction) -> Result<(), DegenError> {
+    match action {
+        InstagramAction::Allow { igsid } => {
+            let added = policy::allow_recipient(&igsid)?;
+            println!("{igsid} {}", if added { "may now be sent direct messages" } else { "was already allowed" });
+            if added {
+                eprintln!("# Instagram still refuses unless they messaged the account first, within the last 24 hours.");
+            }
+            Ok(())
+        }
+        InstagramAction::Deny { igsid } => {
+            let removed = policy::deny_recipient(&igsid)?;
+            println!("{igsid} {}", if removed { "may no longer be sent direct messages" } else { "was not allowed anyway" });
+            Ok(())
+        }
+        InstagramAction::Recipients => {
+            let recipients = policy::load()?.recipients;
+            if recipients.is_empty() {
+                println!("Nobody may be DMed. Add someone with `degen-portal instagram allow <instagram-scoped id>`.");
+                println!("Their id is `from.id` in instagram_get_message, for a conversation from instagram_list_conversations.");
+            } else {
+                for id in recipients {
+                    println!("{id}");
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
 /// `degen-portal log`.
 fn log(limit: usize) -> Result<(), DegenError> {
     let entries = ledger::read();
@@ -122,7 +155,7 @@ fn log(limit: usize) -> Result<(), DegenError> {
     let now = oauth::now();
     let policy = policy::load()?;
     println!();
-    for provider in ["x", "discord"] {
+    for provider in ["x", "discord", "instagram"] {
         let budget = policy.budget(provider);
         let hour = ledger::published_since(&entries, provider, 3600, now);
         let day = ledger::published_since(&entries, provider, 86_400, now);
@@ -203,13 +236,21 @@ fn list() -> Result<(), DegenError> {
                 .join(", ")
         }
     );
-    let channels = policy::load()?.channels;
+    let policy = policy::load()?;
     println!(
         "  Writable channels:  {}",
-        if channels.is_empty() {
+        if policy.channels.is_empty() {
             "none — `degen-portal discord allow <channel id>`".to_string()
         } else {
-            channels.iter().cloned().collect::<Vec<_>>().join(", ")
+            policy.channels.iter().cloned().collect::<Vec<_>>().join(", ")
+        }
+    );
+    println!(
+        "  DM recipients:      {}",
+        if policy.recipients.is_empty() {
+            "none — `degen-portal instagram allow <instagram-scoped id>`".to_string()
+        } else {
+            policy.recipients.iter().cloned().collect::<Vec<_>>().join(", ")
         }
     );
     println!();
@@ -218,6 +259,7 @@ fn list() -> Result<(), DegenError> {
     println!("  degen-portal discord invite               URL that adds your bot to a server");
     println!("  degen-portal auth set DISCORD_BOT_TOKEN   Store the bot token (read from stdin)");
     println!("  degen-portal connect x                    Connect an X account (one browser trip)");
+    println!("  degen-portal connect instagram            Connect an Instagram professional account");
     println!("  degen-portal accounts                     Connected accounts and token expiry");
     println!("  degen-portal run <tool> --param value     Call a tool");
     Ok(())

@@ -2,10 +2,12 @@
 
 [degen-tools](https://github.com/ethereumdegen/degen-tools) for social. The same
 idea — one HTTP call per tool, credentials injected and never printed, an agent
-that can run a shell command can use it — pointed at **Discord** and **X**.
+that can run a shell command can use it — pointed at **Discord**, **X** and
+**Instagram**.
 
 The difference is that these calls are public, permanent and billed, so there is
-a layer between an agent and the send button.
+a layer between an agent and the send button. On Instagram "permanent" is
+literal: its API can publish a post and cannot delete one.
 
 ```bash
 cargo install --path .
@@ -80,6 +82,38 @@ upload may need the connected account even when keys are set.
 If `/2/*` calls return `client-forbidden` after auth worked, move the app to the
 **Pay-per-use** package and **Production** environment in X's console.
 
+### Instagram — one browser trip, a token that lasts sixty days
+
+This is **Instagram Login**, not Facebook Login: the account is an Instagram
+professional account (business or creator), and no Facebook Page, Page token or
+Business Manager is in the picture.
+
+```bash
+# https://developers.facebook.com -> your app -> Instagram -> API setup with Instagram login
+degen-portal auth set INSTAGRAM_APP_ID            # the Instagram app id, from that panel
+degen-portal auth set INSTAGRAM_APP_SECRET        # read from stdin, never printed
+degen-portal auth set INSTAGRAM_REDIRECT_URI https://your.registered/callback
+
+degen-portal connect instagram
+degen-portal instagram allow <instagram-scoped id>   # before any DM goes out
+```
+
+Meta wants an HTTPS redirect URI registered in the app dashboard, and nothing
+here serves HTTPS, so `connect instagram` prints the authorization URL and takes
+the code back by hand: approve, then paste the URL the browser lands on — that
+page does not have to load. Leave `INSTAGRAM_REDIRECT_URI` unset and it uses
+this machine's own `http://localhost:7720/oauth/callback` listener instead, for
+the dashboards that still accept it.
+
+The code is exchanged for a one-hour token, immediately traded for a sixty-day
+one, and only that is stored. There is no refresh token: the access token
+refreshes itself, automatically, a week before it would lapse. Left unused for
+sixty days it expires for good and wants another browser trip.
+
+Publishing wants `instagram_business_content_publish`; DMs want
+`instagram_business_manage_messages` and, for an account you do not own, Meta's
+App Review.
+
 ## The dashboard
 
 `degen-portal` with no arguments starts the local API and a dashboard over it:
@@ -88,10 +122,12 @@ left, what is waiting for approval, what has already gone out, and every
 request as it happens.
 
 ```
-╭ accounts · 1 · keychain ───────────────────╮╭ budget ──────────────────────╮
-│ ★ x:degenspartan   expires in 47m          ││x ⏸    1/10   this hour  ─────│
-│   discord bot   token set                  ││       2/20   this day   ─────│
-│   channels      1180000000000000000        ││discord 1/30  this hour  ─────│
+╭ accounts · 2 · keychain ───────────────────╮╭ budget ──────────────────────╮
+│ ★ x:degenspartan   expires in 47m          ││x ⏸      1/10  this hour ─────│
+│   instagram:degenlabs  expires in 58d      ││         2/20  this day  ─────│
+│   discord bot   token set                  ││discord  1/30  this hour ─────│
+│   channels      1180000000000000000        ││         1/200 this day  ─────│
+│   dm recipients 178041234567890            ││instagram 0/10 this hour ─────│
 ╰────────────────────────────────────────────╯╰──────────────────────────────╯
 ╭ waiting for you · 2 ───────────────────────╮╭ published ───────────────────╮
 │▸ q1   x_post   gm degens                   ││5m ago   x·post  @degenspartan│
@@ -113,8 +149,9 @@ happened.
 | Gate | |
 |---|---|
 | **Channel allowlist** | A Discord write needs the channel allowed by a human. An agent that can list channels can find `#announcements`; having the id is not permission. |
+| **Recipient allowlist** | An Instagram DM needs the recipient allowed by a human. Reading the inbox hands an agent every id in it; that is not permission to answer them. Instagram itself also refuses anyone who has not written to the account in the last 24 hours, so a DM is always a reply. |
 | **Repeat window** | The same publish twice inside 15 minutes is refused, naming the post it would have duplicated. This is what catches a retry after a timeout. |
-| **Budgets** | X 10/hour and 20/day, Discord 30/hour and 200/day. The refusal says when the next slot frees. `degen-portal budget x --per-day 50` to change. |
+| **Budgets** | X 10/hour and 20/day, Discord 30/hour and 200/day, Instagram 10/hour and 50/day. The refusal says when the next slot frees. `degen-portal budget x --per-day 50` to change. |
 | **Approval queue** | Opt in per provider with `degen-portal approval x queue`: calls are held, and a human runs `approve` or `drop`. |
 
 Nothing is ever retried automatically. Mentions never notify: `@everyone` and
@@ -127,6 +164,11 @@ that undoes it:
 degen-portal log            # what went out, and how much budget is left
 degen-portal undo           # delete the most recent post
 ```
+
+Instagram is the exception, and the ledger says so rather than pretending:
+**its API has no delete**, for a post or for a sent message, so an Instagram
+entry carries no undo and `degen-portal undo` skips it. A post an agent made
+comes down by hand, in the app.
 
 ## Agents
 
@@ -165,6 +207,7 @@ rather speak JSON.
 |---|---|---|
 | `discord` | `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL`, `DISCORD_CLIENT_ID` | Send, edit, delete, react, threads, attachments, read messages, list servers and channels, webhook posting. |
 | `x` | connected account (OAuth) | Post, reply, quote, poll, delete, image and video upload, search, mentions, own timeline, like, repost. |
+| `instagram` | connected account (OAuth) | Publish images, reels, stories and carousels from public URLs, read your media, read conversations, send direct messages. |
 
 Same format as degen-tools: `integration.json` plus one JSON file per tool, in
 the metalcraft integration format, so a package runs here and in the agent.
@@ -176,8 +219,10 @@ the metalcraft integration format, so a package runs here and in the agent.
 | `degen-portal` / `serve` | Dashboard + local API on 127.0.0.1:7719 (`--headless` for log lines) |
 | `connect` | Print `DEGEN_PORTAL_URL` / `DEGEN_PORTAL_TOKEN` for agents |
 | `connect x [--headless]` | Connect an X account over OAuth |
+| `connect instagram [--headless]` | Connect an Instagram professional account |
 | `accounts` / `accounts default` / `accounts revoke` | Connected accounts and token expiry |
 | `discord invite \| allow \| deny \| channels` | Bot install URL and the channel allowlist |
+| `instagram allow \| deny \| recipients` | Who this machine may send a direct message to |
 | `run <tool> --param value [--account x:handle]` | Call a tool |
 | `skill [package\|tool]` | Agent-facing docs |
 | `log` / `undo` | What was published, and take it back |
@@ -197,7 +242,7 @@ the metalcraft integration format, so a package runs here and in the agent.
 |---|---|
 | `credentials.json` | Bot tokens and webhook URLs, unless they live in the project `.env` |
 | `accounts.json` | OAuth access and refresh tokens, written atomically |
-| `policy.json` | Channel allowlist, budgets, approval mode |
+| `policy.json` | Channel allowlist, DM recipient allowlist, budgets, approval mode |
 | `ledger.jsonl` | Everything published, with its undo |
 | `queue.json` | Calls waiting for approval |
 
@@ -219,6 +264,9 @@ a tool you installed, wrong for one you are rebuilding every few minutes.
 
 - **Anything hosted.** No relay, no broker, no always-on daemon. Close the
   laptop and nothing posts, which is the point.
+- **Instagram DM webhooks.** Meta pushes inbound messages to an HTTPS endpoint,
+  and there is no endpoint. `instagram_list_conversations` polls instead: the
+  same conversation, one call later.
 
 ## Built on
 

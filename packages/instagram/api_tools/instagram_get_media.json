@@ -1,0 +1,23 @@
+{
+  "name": "instagram_get_media",
+  "description": "One post in full: { id, caption, media_type, media_product_type, media_url, thumbnail_url, permalink, timestamp, username, like_count, comments_count }. This is how you turn the id instagram_publish_media returned into a `permalink` a human can open. `thumbnail_url` is set for video only.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/{media_id}?fields=id,caption,media_type,media_product_type,media_url,thumbnail_url,permalink,timestamp,username,like_count,comments_count",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "media_id": {
+        "type": "string",
+        "description": "Media id \u2014 the `id` instagram_publish_media returned, or one from instagram_list_media. Not a container id."
+      }
+    },
+    "required": [
+      "media_id"
+    ]
+  },
+  "body_mapping": "none"
+}

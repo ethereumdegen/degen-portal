@@ -1,0 +1,23 @@
+{
+  "name": "instagram_get_message",
+  "description": "One message in full: { id, created_time, from, to, message, attachments, shares }. `message` is the text. `from.id` is the Instagram-scoped id (IGSID) that instagram_send_dm and instagram_send_dm_image take as --recipient_id, and `created_time` on their latest message is what the 24-hour reply window is counted from. Only the 20 most recent messages in a conversation can be read this way.",
+  "method": "GET",
+  "url": "https://graph.instagram.com/v25.0/{message_id}?fields=id,created_time,from,to,message,attachments,shares",
+  "headers": {
+    "Authorization": "Bearer $INSTAGRAM_ACCESS_TOKEN",
+    "Accept": "application/json"
+  },
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "message_id": {
+        "type": "string",
+        "description": "Message id from instagram_get_conversation."
+      }
+    },
+    "required": [
+      "message_id"
+    ]
+  },
+  "body_mapping": "none"
+}

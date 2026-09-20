@@ -490,11 +490,13 @@ pub fn apply(account: &mut Account, token: TokenResponse) {
 /// Held while a refresh is in flight, because X rotates refresh tokens: two
 /// processes refreshing the same account at once would leave one of them
 /// holding a token X has already invalidated, and that account would be dead
-/// until the human reconnected it.
-struct RefreshLock(PathBuf);
+/// until the human reconnected it. Instagram does not rotate, but its token
+/// is a sixty-day credential replaced in place, so a lost race there loses
+/// the account just as thoroughly.
+pub(crate) struct RefreshLock(PathBuf);
 
 impl RefreshLock {
-    fn acquire() -> Result<Self, DegenError> {
+    pub(crate) fn acquire() -> Result<Self, DegenError> {
         let path = data_dir()?.join("refresh.lock");
         let deadline = std::time::Instant::now() + Duration::from_secs(20);
         loop {

@@ -6,11 +6,12 @@ use clap::{Parser, Subcommand};
 #[command(
     name = "degen-portal",
     version,
-    about = "degen-portal — Discord and X for AI agents, with an allowlist between them and the send button",
-    long_about = "Call Discord (and, from P2, X) over their HTTP APIs with stored credentials. \
-                  Tokens are injected into requests and never printed. A write to a channel is \
-                  refused unless a human allowed that channel. Packages use the metalcraft \
-                  integration format (integration.json + api_tools/*.json)."
+    about = "degen-portal — Discord, X and Instagram for AI agents, with an allowlist between them and the send button",
+    long_about = "Call Discord, X and Instagram over their HTTP APIs with stored credentials. \
+                  Tokens are injected into requests and never printed. A write to a Discord \
+                  channel, or a direct message to an Instagram user, is refused unless a human \
+                  allowed that id. Packages use the metalcraft integration format \
+                  (integration.json + api_tools/*.json)."
 )]
 pub struct Cli {
     /// With no command, `degen-portal` starts the local API (like `serve`).
@@ -34,7 +35,7 @@ pub enum Commands {
     /// With no argument: print the URL and token of the running server (for agents:
     /// eval "$(degen-portal connect)"). With a provider: connect an account over OAuth.
     Connect {
-        /// Provider to connect an account for, e.g. `x`
+        /// Provider to connect an account for: `x` or `instagram`
         provider: Option<String>,
 
         /// Print the authorization URL and read the code back, instead of opening a browser
@@ -101,7 +102,13 @@ pub enum Commands {
         action: DiscordAction,
     },
 
-    /// What this machine can post right now: accounts, channels, budget left
+    /// Instagram setup: who this machine may send a direct message to
+    Instagram {
+        #[command(subcommand)]
+        action: InstagramAction,
+    },
+
+    /// What this machine can post right now: accounts, channels, DM recipients, budget left
     Status,
 
     /// Print Discord messages as they arrive, one JSON line each, until stopped
@@ -206,6 +213,23 @@ pub enum DiscordAction {
 
     /// List the channels this machine may write to
     Channels,
+}
+
+#[derive(Subcommand)]
+pub enum InstagramAction {
+    /// Allow this machine to send direct messages to an Instagram-scoped id
+    Allow {
+        /// IGSID, as `from.id` in instagram_get_message
+        igsid: String,
+    },
+
+    /// Stop allowing a recipient
+    Deny {
+        igsid: String,
+    },
+
+    /// List the recipients this machine may DM
+    Recipients,
 }
 
 #[derive(Subcommand)]

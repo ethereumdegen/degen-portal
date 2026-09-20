@@ -8,6 +8,7 @@
 pub mod connect;
 pub mod credentials;
 pub mod gateway;
+pub mod instagram;
 pub mod ledger;
 pub mod oauth;
 pub mod policy;

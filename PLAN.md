@@ -383,6 +383,48 @@ nothing else does. On the wire: four keys produce `OAuth oauth_signature=…` wi
 and neither secret present, a connected account produces `Bearer …`, keys win when both are set,
 having neither names both ways in, and two identical posts are signed differently.
 
+**Instagram, posting and DMs. DONE.** Instagram API with *Instagram Login*, so the account is an
+Instagram professional account and no Facebook Page, Page token or Business Manager exists in
+the design. 11 tools on `graph.instagram.com/v25.0`: the two-step publish (`instagram_create_media`
+→ `instagram_publish_media`) with `instagram_media_status` for the containers Meta processes
+asynchronously, the media reads, the three conversation reads, and `instagram_send_dm` /
+`instagram_send_dm_image`.
+
+Three things made it unlike X and Discord, and each one is visible in the code rather than
+papered over:
+
+1. **No delete.** The API publishes and cannot remove — not a post, not a sent message. So
+   `ledger::undo_for` returns `None` for the provider, `undo` skips those entries, and the tool
+   descriptions, the skill and `status` all say it in as many words. The alternative — recording
+   an undo that 404s — would make `log` lie about what can be taken back.
+2. **A different token lifecycle.** No PKCE (Meta wants the app secret), no refresh token: the
+   one-hour code exchange is immediately traded for a sixty-day token, and that token refreshes
+   *itself* via `GET /refresh_access_token`. `instagram::access_token` refreshes a week out,
+   under the same lock file X's rotation uses, declines to try below Meta's 24-hour minimum age,
+   and on an outright expired token says to reconnect instead of retrying something that cannot
+   work. Unlike X, it is a `$NAME` a package file can carry, so it resolves through
+   `CredentialResolver` rather than needing a signer.
+3. **A DM is not a post.** Publishing to your own feed needs no allowlist; a direct message lands
+   in someone's inbox. So the Discord channel allowlist gained a sibling: `policy.recipients`,
+   `degen-portal instagram allow <igsid>`, and a refusal that names the command. Instagram's own
+   rule (they must have messaged you, inside 24 hours) is *their* gate about the conversation;
+   this one is about this machine, because reading an inbox hands an agent every id in it.
+
+Media is the other asymmetry: Instagram fetches from a public HTTPS URL and accepts no upload, so
+nothing here takes a local path the way `x_upload_media` and `discord_upload_attachment` do.
+
+*Verified:* 73 tests. The acceptance cases assert against a server that counts what arrives — a
+DM to an unallowed recipient never reaches it, allowing one recipient does not allow another,
+denying takes it back, a repeat inside the window is refused with the message id it would have
+duplicated, and a sent DM is recorded with no undo. The refresh path is proven end to end against
+a local `refresh_access_token`: a token three days from lapsing is refreshed once, persisted with
+a new expiry and no invented refresh token, not refreshed again, and it is the *new* bearer that
+arrives on the next call; a token under 24 hours old is used as-is rather than sent to be
+refused; an expired one errors with the reconnect command. Also demonstrated at the CLI against
+the real Meta: `instagram_send_dm` reaches `graph.instagram.com/v25.0/me/messages` and comes back
+`OAuthException` 190 for the bogus token, recorded in the ledger as a failure that counts against
+nothing.
+
 Explicitly **not** in the plan: any deploy, any always-on host, scheduled posts, `accounts
 export/import`, a second machine. degen-portal runs when you run it. Close the laptop and it
 stops posting — that is the intended behaviour, and it deletes a daemon, a hosting bill, a
